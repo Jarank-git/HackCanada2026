@@ -15,7 +15,9 @@ dist-ssr
 # Environment variables (contain API keys/secrets)
 .env
 .env.*
+!.env.example
 server/.env
+!server/.env.example
 
 # Server build & dependencies
 server/node_modules

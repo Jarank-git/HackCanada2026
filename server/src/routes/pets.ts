@@ -63,7 +63,7 @@ function groupToPets(resources: CloudinaryResource[]) {
 router.get("/", async (_req, res) => {
   try {
     const result: CloudinarySearchResult = await cloudinary.search
-      .expression("folder:pawprint/pets/* AND metadata.pawprint_pet_id:*")
+      .expression("folder:pawprint/pets/*")
       .with_field("metadata")
       .with_field("tags")
       .sort_by("created_at", "desc")
