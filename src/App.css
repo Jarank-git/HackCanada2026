@@ -2261,36 +2261,52 @@
 
 /* ── Print styles ────────────────────────────── */
 @media print {
-  /* Hide everything visually — visibility lets children override */
-  body * {
-    visibility: hidden;
+  /* Hide everything except the kennel card */
+  body > *,
+  .navbar,
+  .footer,
+  .layout-main > * {
+    display: none !important;
   }
 
-  /* Prevent hidden content from creating extra blank pages */
-  body {
-    margin: 0;
-    padding: 0;
-    height: 148mm;
-    overflow: hidden;
-    background: #fff;
+  /* Keep the page wrapper visible so the kennel card can show */
+  body,
+  .layout,
+  .layout-main,
+  .page,
+  .download-page,
+  .pet-profile-page,
+  .download-extras,
+  .download-extras-col {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  /* Hide all siblings of the kennel card's ancestor chain */
+  .download-extras > *,
+  .pet-sidebar > *,
+  .pet-sidebar-card > * {
+    display: none !important;
+  }
+
+  /* Show the kennel card container */
+  .download-extras-col:has(.kennel-card),
+  .pet-sidebar-card:has(.kennel-card) {
+    display: block !important;
   }
 
   .kennel-card-print-btn {
     display: none !important;
   }
 
-  /* Show the kennel card and all its contents */
-  .kennel-card,
-  .kennel-card * {
-    visibility: visible;
-  }
-
+  /* Show the kennel card */
   .kennel-card {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 210mm;
-    height: 148mm;
+    display: flex !important;
+    flex-direction: column;
+    width: 100%;
     max-width: none;
     aspect-ratio: auto;
     border: none;
@@ -2298,24 +2314,40 @@
     box-shadow: none;
     padding: 12mm;
     margin: 0;
-    z-index: 99999;
     background: #fff;
-    overflow: hidden;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .kennel-card * {
+    overflow: visible !important;
   }
 
   .kennel-card-grid {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+  }
+
+  .kennel-card-photo {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .kennel-card-photo img {
-    max-height: 100%;
-    object-fit: cover;
+    max-width: 100%;
+    max-height: 80mm;
+    object-fit: contain;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .kennel-card-qr {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .kennel-card-info {
-    overflow: hidden;
+    overflow: visible;
   }
 
   @page {
