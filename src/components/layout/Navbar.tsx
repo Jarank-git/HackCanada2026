@@ -8,13 +8,7 @@ export default function Navbar() {
     <nav className="navbar" role="navigation" aria-label="Main navigation">
       <div className="navbar-inner">
         <Link to="/" className="navbar-brand">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <ellipse cx="6.5" cy="5" rx="2.2" ry="2.8" fill="#fdb924" />
-            <ellipse cx="17.5" cy="5" rx="2.2" ry="2.8" fill="#fdb924" />
-            <ellipse cx="3.5" cy="11" rx="2" ry="2.5" fill="#fdb924" />
-            <ellipse cx="20.5" cy="11" rx="2" ry="2.5" fill="#fdb924" />
-            <ellipse cx="12" cy="16" rx="5" ry="4.5" fill="#fdb924" />
-          </svg>
+          <img src="/pawprint-logo.png" alt="" width="30" height="30" aria-hidden="true" className="navbar-logo" />
           PawPrint
         </Link>
 

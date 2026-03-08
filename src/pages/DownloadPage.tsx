@@ -242,23 +242,25 @@ export default function DownloadPage() {
         ))}
       </div>
 
-      {/* Social preview */}
-      <div className="social-preview-section">
-        <h2 className="pet-section-title">Post Preview</h2>
-        <div className="social-preview-tabs">
-          {PLATFORMS.map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              className={`social-preview-tab ${previewPlatform === p.key ? 'social-preview-tab--active' : ''}`}
-              onClick={() => setPreviewPlatform(previewPlatform === p.key ? null : p.key)}
-            >
-              {p.label}
-            </button>
-          ))}
+      {/* Social preview — only shown once platform captions are ready */}
+      {platformCaptions && (
+        <div className="social-preview-section">
+          <h2 className="pet-section-title">Post Preview</h2>
+          <div className="social-preview-tabs">
+            {PLATFORMS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                className={`social-preview-tab ${previewPlatform === p.key ? 'social-preview-tab--active' : ''}`}
+                onClick={() => setPreviewPlatform(previewPlatform === p.key ? null : p.key)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          {previewPlatform && <SocialPreview pet={pet} platform={previewPlatform} platformCaptions={platformCaptions} />}
         </div>
-        {previewPlatform && <SocialPreview pet={pet} platform={previewPlatform} />}
-      </div>
+      )}
 
       {/* QR Code + Kennel Card */}
       <div className="download-extras">
