@@ -2163,7 +2163,6 @@
   background-position: center;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   border-radius: 14px;
   overflow: hidden;
 }
@@ -2237,6 +2236,7 @@
   position: relative;
   z-index: 2;
   padding: 16px 12px 10px;
+  margin-top: auto;
 }
 
 .sp-story-caption {
