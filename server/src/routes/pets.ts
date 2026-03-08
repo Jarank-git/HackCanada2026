@@ -104,6 +104,51 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// POST /api/pets/:id/temperament — save temperament to Cloudinary metadata
+router.post("/:id/temperament", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { temperament } = req.body;
+
+    if (!Array.isArray(temperament)) {
+      res.status(400).json({ error: "temperament must be an array" });
+      return;
+    }
+
+    const result: CloudinarySearchResult = await cloudinary.search
+      .expression(
+        `folder:pawprint/pets/* AND metadata.pawprint_pet_id=${id}`,
+      )
+      .with_field("metadata")
+      .max_results(30)
+      .execute();
+
+    if (result.resources.length === 0) {
+      res.status(404).json({ error: "Pet not found" });
+      return;
+    }
+
+    const ids = temperament.map((t: string) =>
+      t.toLowerCase().replace(/\s+/g, "_"),
+    );
+    const metadataValue = `pawprint_temperament=[${ids.join("|")}]`;
+
+    await Promise.all(
+      result.resources.map((r) =>
+        cloudinary.uploader.explicit(r.public_id, {
+          type: "upload",
+          metadata: metadataValue,
+        }),
+      ),
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Failed to save temperament:", err);
+    res.status(500).json({ error: "Failed to save temperament" });
+  }
+});
+
 // POST /api/pets/:id/caption — save caption to Cloudinary metadata
 router.post("/:id/caption", async (req, res) => {
   try {

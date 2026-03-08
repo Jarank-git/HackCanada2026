@@ -14,7 +14,7 @@ export async function generateCaption(petData: PetData): Promise<string> {
   const prompt = `Write a warm, engaging adoption caption for a social media post about a shelter pet. The caption should be 2-3 sentences, highlight the pet's personality, and include a call to action. Do not use hashtags. Pet details: Name: ${petData.name}, Species: ${petData.species}, Breed: ${petData.breed}, Age: ${petData.age}, Sex: ${petData.sex}, Temperament: ${petData.temperament.join(", ")}. Return only the caption text, nothing else.`;
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

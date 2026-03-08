@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { galleryUrl, heroUrl } from '../../cloudinary/transformations';
+import { galleryUrl, lightboxUrl } from '../../cloudinary/transformations';
 
 interface PetGalleryProps {
   publicIds: string[];
@@ -46,7 +46,7 @@ export default function PetGallery({ publicIds }: PetGalleryProps) {
           </button>
           <img
             className="lightbox-image"
-            src={heroUrl(lightboxId)}
+            src={lightboxUrl(lightboxId)}
             alt="Pet photo enlarged"
             onClick={(e) => e.stopPropagation()}
           />

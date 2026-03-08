@@ -3,7 +3,6 @@ import { fill } from '@cloudinary/url-gen/actions/resize';
 import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
 import { format, quality } from '@cloudinary/url-gen/actions/delivery';
 import { auto as autoFormat } from '@cloudinary/url-gen/qualifiers/format';
-import { auto as autoQuality } from '@cloudinary/url-gen/qualifiers/quality';
 import { improve } from '@cloudinary/url-gen/actions/adjust';
 import { source } from '@cloudinary/url-gen/actions/overlay';
 import { text } from '@cloudinary/url-gen/qualifiers/source';
@@ -22,10 +21,19 @@ const PLATFORM_DIMENSIONS: Record<PlatformKey, { width: number; height: number }
 
 export function heroUrl(publicId: string): string {
   return cld.image(publicId)
-    .resize(fill().width(800).height(600).gravity(autoGravity()))
+    .resize(fill().width(1200).height(800).gravity(autoGravity()))
     .adjust(improve())
     .delivery(format(autoFormat()))
-    .delivery(quality(autoQuality()))
+    .delivery(quality(90))
+    .toURL();
+}
+
+export function lightboxUrl(publicId: string): string {
+  return cld.image(publicId)
+    .resize(fill().width(1600).height(1200).gravity(autoGravity()))
+    .adjust(improve())
+    .delivery(format(autoFormat()))
+    .delivery(quality(90))
     .toURL();
 }
 
@@ -33,7 +41,7 @@ export function thumbnailUrl(publicId: string): string {
   return cld.image(publicId)
     .resize(fill().width(300).height(300).gravity(autoGravity()))
     .delivery(format(autoFormat()))
-    .delivery(quality(autoQuality()))
+    .delivery(quality(80))
     .toURL();
 }
 
@@ -52,7 +60,7 @@ export function socialCardUrl(publicId: string, petName: string, breed: string):
       ).position(new Position().gravity(compass('south')).offsetY(30))
     )
     .delivery(format(autoFormat()))
-    .delivery(quality(autoQuality()))
+    .delivery(quality(90))
     .toURL();
 }
 
@@ -62,14 +70,15 @@ export function platformUrl(publicId: string, platform: PlatformKey): string {
     .resize(fill().width(width).height(height).gravity(autoGravity()))
     .adjust(improve())
     .delivery(format(autoFormat()))
-    .delivery(quality(autoQuality()))
+    .delivery(quality(90))
     .toURL();
 }
 
 export function galleryUrl(publicId: string): string {
   return cld.image(publicId)
-    .resize(fill().width(600).height(400).gravity(autoGravity()))
+    .resize(fill().width(900).height(600).gravity(autoGravity()))
+    .adjust(improve())
     .delivery(format(autoFormat()))
-    .delivery(quality(autoQuality()))
+    .delivery(quality(85))
     .toURL();
 }

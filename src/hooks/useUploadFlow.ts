@@ -12,6 +12,7 @@ export function useUploadFlow(
   petId: string,
   _formData: PetFormData,
   assets: UploadedAsset[],
+  heroPublicId?: string | null,
 ): UseUploadFlowResult {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +23,18 @@ export function useUploadFlow(
 
     try {
       // Photos are already uploaded with metadata via the Upload Widget.
-      // Select the hero photo: highest qualityScore, or the first photo.
-      const hero = assets.reduce((best, asset) => {
-        if (best.qualityScore === null) return asset;
-        if (asset.qualityScore === null) return best;
-        return asset.qualityScore > best.qualityScore ? asset : best;
-      }, assets[0]);
+      // Use the manually selected hero if provided, otherwise pick highest qualityScore or first.
+      let hero = heroPublicId
+        ? assets.find((a) => a.publicId === heroPublicId) ?? null
+        : null;
+
+      if (!hero) {
+        hero = assets.reduce((best, asset) => {
+          if (best.qualityScore === null) return asset;
+          if (asset.qualityScore === null) return best;
+          return asset.qualityScore > best.qualityScore ? asset : best;
+        }, assets[0]);
+      }
 
       // Tag the hero image in Cloudinary
       if (hero) {

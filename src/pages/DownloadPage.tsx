@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePet } from '../hooks/usePet';
 import { useDownloadPack } from '../hooks/useDownloadPack';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { usePlatformCaptions } from '../hooks/usePlatformCaptions';
 import { PLATFORMS } from '../types/platform';
 import type { PlatformKey } from '../types/platform';
 import CaptionCard from '../components/campaign/CaptionCard';
@@ -12,6 +13,7 @@ import QRCodeCard from '../components/campaign/QRCodeCard';
 import KennelCard from '../components/campaign/KennelCard';
 import ErrorBanner from '../components/ui/ErrorBanner';
 import EmptyState from '../components/ui/EmptyState';
+import Toast from '../components/ui/Toast';
 
 const PAW_ICON = (
   <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }}>
@@ -27,8 +29,20 @@ export default function DownloadPage() {
   const { id } = useParams<{ id: string }>();
   const { pet, loading, error, isNotFound, refresh } = usePet(id);
   const { downloadPlatform, downloadAll, progress, isGenerating, error: downloadError, skippedCount } = useDownloadPack(pet);
+  const { captions: platformCaptions, loading: captionsLoading, error: captionsError, generate: generateCaptions } = usePlatformCaptions(pet);
   const [previewPlatform, setPreviewPlatform] = useState<PlatformKey | null>(null);
   const online = useOnlineStatus();
+  const [showToast, setShowToast] = useState(false);
+  const handleToastDone = useCallback(() => setShowToast(false), []);
+
+  async function handleCopyPlatformCaption(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setShowToast(true);
+    } catch {
+      /* clipboard not available */
+    }
+  }
 
   /* ── Loading skeleton ──────────────────────── */
   if (loading) {
@@ -117,6 +131,85 @@ export default function DownloadPage() {
       {/* Caption card */}
       <CaptionCard caption={pet.caption} petName={pet.name} />
 
+      {/* Platform-specific captions */}
+      <div className="platform-captions-section">
+        <div className="platform-captions-header">
+          <h2 className="pet-section-title">Platform Captions</h2>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={generateCaptions}
+            disabled={captionsLoading || !online}
+          >
+            {captionsLoading ? (
+              <span className="upload-spinner">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Generating...
+              </span>
+            ) : platformCaptions ? 'Regenerate Captions' : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
+                </svg>
+                Generate Platform Captions
+              </>
+            )}
+          </button>
+        </div>
+
+        {captionsError && (
+          <div style={{ marginTop: '0.75rem' }}>
+            <ErrorBanner message={captionsError} onRetry={generateCaptions} />
+          </div>
+        )}
+
+        {!platformCaptions && !captionsLoading && (
+          <p className="platform-captions-hint">
+            Generate AI-powered captions tailored to each social media platform, complete with trending hashtags.
+          </p>
+        )}
+
+        {platformCaptions && (
+          <div className="platform-captions-grid">
+            {PLATFORMS.map((p) => {
+              const pc = platformCaptions[p.key];
+              if (!pc) return null;
+              const fullText = pc.caption + (pc.hashtags.length > 0 ? '\n\n' + pc.hashtags.map((h) => `#${h}`).join(' ') : '');
+              return (
+                <div key={p.key} className="platform-caption-card">
+                  <div className="platform-caption-card-header">
+                    <span className="platform-caption-card-label">{p.label}</span>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleCopyPlatformCaption(fullText)}
+                      aria-label={`Copy ${p.label} caption`}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                      </svg>
+                      Copy
+                    </button>
+                  </div>
+                  <p className="platform-caption-card-text">{pc.caption}</p>
+                  {pc.hashtags.length > 0 && (
+                    <div className="platform-caption-hashtags">
+                      {pc.hashtags.map((h) => (
+                        <span key={h} className="platform-caption-hashtag">#{h}</span>
+                      ))}
+                    </div>
+                  )}
+                  <span className="platform-caption-card-count">{fullText.length} characters</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Platform grid */}
       <h2 className="pet-section-title" style={{ marginTop: '2.5rem' }}>Platform Packs</h2>
       <div className="download-grid">
@@ -191,6 +284,8 @@ export default function DownloadPage() {
           Back to Profile
         </Link>
       </div>
+
+      <Toast message="Caption copied!" visible={showToast} onDone={handleToastDone} />
     </div>
   );
 }

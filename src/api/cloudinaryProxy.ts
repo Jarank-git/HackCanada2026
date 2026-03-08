@@ -44,6 +44,15 @@ export async function fetchPet(petId: string): Promise<Pet | null> {
   return res.json();
 }
 
+export async function savePetTemperament(petId: string, temperament: string[]): Promise<void> {
+  const res = await fetch(`${BASE_URL}/pets/${encodeURIComponent(petId)}/temperament`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ temperament }),
+  });
+  if (!res.ok) throw new Error('Failed to save temperament');
+}
+
 export async function savePetCaption(petId: string, caption: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/pets/${encodeURIComponent(petId)}/caption`, {
     method: 'POST',

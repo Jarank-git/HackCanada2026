@@ -80,7 +80,6 @@ export function UploadWidget({
           uploadPreset: uploadPreset || undefined,
           sources: ['local', 'camera', 'url'],
           multiple: false,
-          quality_analysis: true,
           ...(folder && { folder }),
           ...(metadataString && { metadata: metadataString }),
         },

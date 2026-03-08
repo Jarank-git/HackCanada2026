@@ -5,9 +5,12 @@ import PhotoDropZone from '../components/upload/PhotoDropZone';
 import StepIndicator from '../components/upload/StepIndicator';
 import { useUploadFlow } from '../hooks/useUploadFlow';
 import { useCaption } from '../hooks/useCaption';
+import { useImageAnalysis } from '../hooks/useImageAnalysis';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { generatePetId } from '../utils/petId';
-import { savePetCaption } from '../api/cloudinaryProxy';
+import { getQualityTier, getQualityPercent } from '../utils/qualityTier';
+import { analyzeImage } from '../utils/photoAnalysis';
+import { savePetCaption, savePetTemperament } from '../api/cloudinaryProxy';
 import ErrorBanner from '../components/ui/ErrorBanner';
 import type { PetFormData, UploadedAsset } from '../types/pet';
 
@@ -35,9 +38,25 @@ export default function UploadPage() {
   const [assets, setAssets] = useState<UploadedAsset[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [editedCaption, setEditedCaption] = useState('');
+  const [manualHeroId, setManualHeroId] = useState<string | null>(null);
 
-  const { submit, isSubmitting, error } = useUploadFlow(petId, formData, assets);
+  // Pick hero photo: manual override first, then highest quality score, fallback to first
+  const heroAsset = useMemo(() => {
+    if (assets.length === 0) return null;
+    if (manualHeroId) {
+      const manual = assets.find((a) => a.publicId === manualHeroId);
+      if (manual) return manual;
+    }
+    const scored = assets.filter((a) => a.qualityScore !== null);
+    if (scored.length > 0) {
+      return scored.reduce((best, a) => (a.qualityScore! > best.qualityScore! ? a : best));
+    }
+    return assets[0];
+  }, [assets, manualHeroId]);
+
+  const { submit, isSubmitting, error } = useUploadFlow(petId, formData, assets, heroAsset?.publicId);
   const { caption, loading: captionLoading, error: captionError, generate: generateCaption } = useCaption(formData);
+  const { results: aiResults, analyzeAll, analyzeOne, isAnalyzing } = useImageAnalysis(assets, formData, heroAsset?.publicId ?? null);
 
   const handleGenerateCaption = async () => {
     setEditedCaption('');
@@ -49,13 +68,10 @@ export default function UploadPage() {
       pawprint_pet_id: petId,
     };
     if (formData.name) md.pawprint_pet_name = formData.name;
-    if (formData.species) md.pawprint_species = formData.species;
+    if (formData.species) md.pawprint_species = formData.species.toLowerCase().replace(/\s+/g, '_');
     if (formData.breed) md.pawprint_breed = formData.breed;
     if (formData.age) md.pawprint_age = formData.age;
-    if (formData.sex) md.pawprint_sex = formData.sex;
-    if (formData.temperament.length > 0) {
-      md.pawprint_temperament = formData.temperament.join(',');
-    }
+    if (formData.sex) md.pawprint_sex = formData.sex.toLowerCase().replace(/\s+/g, '_');
     if (formData.shelterName) md.pawprint_shelter_name = formData.shelterName;
     if (formData.shelterContact) md.pawprint_shelter_contact = formData.shelterContact;
     if (formData.shelterLocation) md.pawprint_shelter_location = formData.shelterLocation;
@@ -70,6 +86,13 @@ export default function UploadPage() {
 
   const handleRemoveAsset = useCallback((publicId: string) => {
     setAssets((prev) => prev.filter((a) => a.publicId !== publicId));
+    if (manualHeroId === publicId) {
+      setManualHeroId(null);
+    }
+  }, [manualHeroId]);
+
+  const handleSetHero = useCallback((publicId: string) => {
+    setManualHeroId(publicId);
   }, []);
 
   // Validation per step
@@ -99,23 +122,22 @@ export default function UploadPage() {
         );
       }
 
+      if (formData.temperament.length > 0) {
+        await savePetTemperament(id, formData.temperament).catch((err) =>
+          console.error('Failed to save temperament:', err),
+        );
+      }
+
       navigate(`/pet/${id}`);
     } catch {
       // error is already set in the hook
     }
   }
 
-  // Pick hero photo (highest quality score, fallback to first)
-  const heroAsset = useMemo(() => {
-    if (assets.length === 0) return null;
-    const scored = assets.filter((a) => a.qualityScore !== null);
-    if (scored.length > 0) {
-      return scored.reduce((best, a) => (a.qualityScore! > best.qualityScore! ? a : best));
-    }
-    return assets[0];
-  }, [assets]);
-
   const currentCaption = editedCaption || caption || '';
+
+  const heroTier = heroAsset ? getQualityTier(heroAsset.qualityScore) : null;
+  const heroPercent = heroAsset ? getQualityPercent(heroAsset.qualityScore) : 0;
 
   return (
     <div className="page upload-page">
@@ -155,6 +177,8 @@ export default function UploadPage() {
                 onRemove={handleRemoveAsset}
                 folder={uploadFolder}
                 metadata={uploadMetadata}
+                heroPublicId={heroAsset?.publicId ?? null}
+                onSetHero={handleSetHero}
               />
             </>
           )}
@@ -173,6 +197,17 @@ export default function UploadPage() {
                       className="review-hero-img"
                     />
                     <span className="review-hero-badge">Hero Photo</span>
+                    {heroTier && (
+                      <span className={`review-quality-badge review-quality-badge--${heroTier.cssClass}`}>
+                        {heroTier.label} Quality &middot; {heroPercent}%
+                      </span>
+                    )}
+                    <span className="review-enhanced-badge">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
+                      </svg>
+                      Enhanced
+                    </span>
                   </div>
                 )}
 
@@ -201,8 +236,186 @@ export default function UploadPage() {
                     </p>
                   )}
                   <p className="review-photo-count">{assets.length} photo{assets.length !== 1 ? 's' : ''} uploaded</p>
+
+                  {/* Quality summary bar chart */}
+                  {assets.length > 0 && (
+                    <div className="review-quality-summary">
+                      <span className="review-quality-summary-label">Photo Quality</span>
+                      <div className="review-quality-bars">
+                        {assets.map((asset) => {
+                          const tier = getQualityTier(asset.qualityScore);
+                          const pct = getQualityPercent(asset.qualityScore);
+                          const isHero = heroAsset?.publicId === asset.publicId;
+                          return (
+                            <div
+                              key={asset.publicId}
+                              className={`review-quality-bar review-quality-bar--${tier.cssClass}${isHero ? ' review-quality-bar--hero' : ''}`}
+                              style={{ height: `${Math.max(pct, 10)}%` }}
+                              title={`${isHero ? 'Hero · ' : ''}${tier.label} · ${pct}%`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Enhancement details */}
+                  <div className="review-enhancements">
+                    <span className="review-quality-summary-label">Auto-Enhancements Applied</span>
+                    <ul className="review-enhancements-list">
+                      <li>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
+                        <span><strong>Lighting &amp; exposure</strong> balanced automatically</span>
+                      </li>
+                      <li>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" /></svg>
+                        <span><strong>Color vibrancy</strong> improved for social media</span>
+                      </li>
+                      <li>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                        <span><strong>High-quality output</strong> at 90% fidelity (no lossy compression)</span>
+                      </li>
+                      <li>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-teal)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                        <span><strong>Smart cropping</strong> focuses on your pet's face</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
+
+              {/* Per-image analysis cards */}
+              {assets.length > 1 && (
+                <div className="review-image-analysis">
+                  <div className="review-image-analysis-header">
+                    <h3 className="review-image-analysis-title">Per-Photo Analysis</h3>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={analyzeAll}
+                      disabled={isAnalyzing || !online}
+                      title={!online ? 'AI analysis requires an internet connection' : undefined}
+                    >
+                      {isAnalyzing ? (
+                        <span className="upload-spinner">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                          </svg>
+                          Analyzing...
+                        </span>
+                      ) : (
+                        <>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
+                          </svg>
+                          Analyze All Photos with AI
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="review-image-analysis-grid">
+                    {assets.map((asset, idx) => {
+                      const heuristicAnalysis = analyzeImage(asset, assets, heroAsset?.publicId ?? null);
+                      const aiState = aiResults[asset.publicId];
+                      const hasAI = !!aiState?.analysis;
+                      const aiLoading = !!aiState?.loading;
+                      const aiError = aiState?.error ?? null;
+                      const tier = getQualityTier(asset.qualityScore);
+                      const pct = getQualityPercent(asset.qualityScore);
+                      const isHero = heroAsset?.publicId === asset.publicId;
+
+                      // Use AI analysis when available, fall back to heuristic
+                      const reasoning = hasAI ? aiState.analysis!.heroSuitability : heuristicAnalysis.heroReasoning;
+                      const enhancements = hasAI ? aiState.analysis!.enhancements : heuristicAnalysis.enhancements;
+                      const note = hasAI ? aiState.analysis!.overallNote : heuristicAnalysis.overallNote;
+                      const suggestions = hasAI ? aiState.analysis!.suggestedTransformations : [];
+
+                      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dp498emx3';
+                      const beforeUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_center/f_auto,q_auto/${asset.publicId}`;
+                      const afterUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_auto/e_improve/f_auto,q_90/${asset.publicId}`;
+
+                      return (
+                        <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}${aiLoading ? ' review-image-card--loading' : ''}`}>
+                          <div className="review-image-card-header">
+                            <div className="review-image-card-meta">
+                              <span className="review-image-card-label">
+                                Photo {idx + 1}
+                                {isHero && <span className="review-image-card-hero-tag">Hero</span>}
+                                {hasAI && <span className="review-image-card-ai-tag">AI Analyzed</span>}
+                              </span>
+                              <span className={`review-image-card-tier review-image-card-tier--${tier.cssClass}`}>
+                                {tier.label} &middot; {pct}%
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="review-before-after">
+                            <div className="review-before-after-pane">
+                              <span className="review-before-after-label review-before-after-label--before">Before</span>
+                              <img src={beforeUrl} alt="Original" className="review-before-after-img" />
+                            </div>
+                            <div className="review-before-after-arrow">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                              </svg>
+                            </div>
+                            <div className="review-before-after-pane">
+                              <span className="review-before-after-label review-before-after-label--after">After</span>
+                              <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
+                            </div>
+                          </div>
+
+                          {aiLoading ? (
+                            <div className="review-image-card-shimmer">
+                              <div className="shimmer-line shimmer-line--long" />
+                              <div className="shimmer-line shimmer-line--medium" />
+                              <div className="shimmer-line shimmer-line--short" />
+                              <div className="shimmer-line shimmer-line--long" />
+                            </div>
+                          ) : (
+                            <>
+                              <p className="review-image-card-reasoning">{reasoning}</p>
+                              <ul className="review-image-card-edits">
+                                {enhancements.map((e, i) => (
+                                  <li key={i}>
+                                    <strong>{e.label}:</strong> {e.description}
+                                  </li>
+                                ))}
+                              </ul>
+                              <p className="review-image-card-note">{note}</p>
+
+                              {suggestions.length > 0 && (
+                                <div className="review-image-card-suggestions">
+                                  <span className="review-image-card-suggestions-label">Suggested Transformations</span>
+                                  <ul>
+                                    {suggestions.map((s, i) => (
+                                      <li key={i}>{s}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+
+                              {aiError && (
+                                <div className="review-image-card-error">
+                                  <span>AI analysis failed</span>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-xs"
+                                    onClick={() => analyzeOne(asset.publicId)}
+                                  >
+                                    Retry
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="preview-caption-section">
                 <div className="preview-caption-header">
