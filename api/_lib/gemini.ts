@@ -31,7 +31,7 @@ interface ImageContext {
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 async function callGemini(prompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error('GEMINI_API_KEY is not set');
 
   const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
@@ -55,7 +55,7 @@ async function callGemini(prompt: string): Promise<string> {
 }
 
 async function callGeminiMultimodal(imageBase64: string, mimeType: string, prompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
   if (!apiKey) throw new Error('GEMINI_API_KEY is not set');
 
   const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
