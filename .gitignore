@@ -13,6 +13,7 @@ dist-ssr
 *.local
 
 # Environment variables (contain API keys/secrets)
+env
 .env
 .env.*
 !.env.example
