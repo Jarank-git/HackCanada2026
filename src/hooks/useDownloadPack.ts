@@ -56,10 +56,10 @@ function buildPlatformCaptionText(
   return lines.join('\n');
 }
 
-/** Force jpg format for consistent downloads instead of f_auto (which may return webp). */
+/** Force jpg at max quality for consistent, high-fidelity downloads. */
 function downloadUrl(publicId: string, platform: PlatformKey): string {
   const url = platformUrl(publicId, platform);
-  return url.replace('/f_auto,', '/f_jpg,');
+  return url.replace(/\/f_auto[^/]*/, '/f_jpg,q_95');
 }
 
 async function fetchImageBlob(url: string): Promise<Blob> {

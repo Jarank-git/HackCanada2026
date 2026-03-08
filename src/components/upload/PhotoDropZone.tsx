@@ -104,7 +104,7 @@ export default function PhotoDropZone({
                       </span>
                     )}
                     <img
-                      src={`https://res.cloudinary.com/dp498emx3/image/upload/c_fill,w_150,h_150,g_auto/f_auto,q_80/${asset.publicId}`}
+                      src={`https://res.cloudinary.com/dp498emx3/image/upload/c_fill,w_150,h_150,g_auto/f_auto,q_auto:good/${asset.publicId}`}
                       alt=""
                       className="thumb-img"
                     />
