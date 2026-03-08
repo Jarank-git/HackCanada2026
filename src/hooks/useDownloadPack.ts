@@ -215,10 +215,12 @@ export function useDownloadPack(pet: Pet | null, platformCaptions?: PlatformCapt
           setProgress(Math.round((fetched / total) * 100));
         }
 
-        // Add platform-specific caption to each folder
+        // Add platform-specific caption to each folder (fallback to general)
         const pc = platformCaptions?.[platform.key];
         if (pc) {
           folder.file('caption.txt', buildPlatformCaptionText(platform.key, pc, pet));
+        } else {
+          folder.file('caption.txt', buildCaptionText(pet));
         }
       }
 

@@ -2179,17 +2179,17 @@
 
 /* ── Print styles ────────────────────────────── */
 @media print {
-  /* Hide everything on the page */
-  body > *,
-  header, footer, nav,
-  .navbar, .footer, .layout-footer, .layout-header {
-    display: none !important;
+  /* Hide everything visually — visibility lets children override */
+  body * {
+    visibility: hidden;
   }
 
-  /* Show only the kennel card wrapper chain */
+  /* Prevent hidden content from creating extra blank pages */
   body {
     margin: 0;
     padding: 0;
+    height: 148mm;
+    overflow: hidden;
     background: #fff;
   }
 
@@ -2197,9 +2197,13 @@
     display: none !important;
   }
 
-  /* Make the kennel card and all its ancestors visible */
+  /* Show the kennel card and all its contents */
+  .kennel-card,
+  .kennel-card * {
+    visibility: visible;
+  }
+
   .kennel-card {
-    display: flex !important;
     position: fixed;
     top: 0;
     left: 0;
@@ -2214,12 +2218,9 @@
     margin: 0;
     z-index: 99999;
     background: #fff;
-    page-break-after: avoid;
-    page-break-inside: avoid;
     overflow: hidden;
   }
 
-  /* Ensure card contents fit and don't overflow */
   .kennel-card-grid {
     flex: 1;
     min-height: 0;
