@@ -391,22 +391,37 @@ export default function UploadPage() {
                             </div>
                           </div>
 
-                          <div className="review-before-after">
-                            <div className="review-before-after-pane">
-                              <span className="review-before-after-label review-before-after-label--before">Before</span>
-                              <img src={beforeUrl} alt="Original" className="review-before-after-img" />
+                          {isVid ? (
+                            <div className="review-before-after">
+                              <div className="review-before-after-pane review-before-after-pane--full">
+                                <span className="review-before-after-label review-before-after-label--after">Preview</span>
+                                <video
+                                  src={`https://res.cloudinary.com/${cloudName}/video/upload/c_fill,w_480,h_270,g_auto/q_auto/${asset.publicId}`}
+                                  className="review-before-after-img"
+                                  controls
+                                  muted
+                                  playsInline
+                                />
+                              </div>
                             </div>
-                            <div className="review-before-after-arrow">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                                <polyline points="12 5 19 12 12 19" />
-                              </svg>
+                          ) : (
+                            <div className="review-before-after">
+                              <div className="review-before-after-pane">
+                                <span className="review-before-after-label review-before-after-label--before">Before</span>
+                                <img src={beforeUrl} alt="Original" className="review-before-after-img" />
+                              </div>
+                              <div className="review-before-after-arrow">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <line x1="5" y1="12" x2="19" y2="12" />
+                                  <polyline points="12 5 19 12 12 19" />
+                                </svg>
+                              </div>
+                              <div className="review-before-after-pane">
+                                <span className="review-before-after-label review-before-after-label--after">After</span>
+                                <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
+                              </div>
                             </div>
-                            <div className="review-before-after-pane">
-                              <span className="review-before-after-label review-before-after-label--after">After</span>
-                              <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
-                            </div>
-                          </div>
+                          )}
 
                           {aiLoading ? (
                             <div className="review-image-card-shimmer">
