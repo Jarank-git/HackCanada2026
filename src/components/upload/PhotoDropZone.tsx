@@ -48,6 +48,10 @@ export default function PhotoDropZone({
   const atLimit = assets.length >= maxPhotos;
   const suggestions = getPhotoSuggestions(assets);
 
+  // Warn about images that are below ideal social media dimensions
+  const smallImages = assets.filter((a) => a.width < 1080 || a.height < 1080);
+  const hasSmallImages = smallImages.length > 0;
+
   return (
     <div className="photo-drop-zone">
       <div className="drop-zone-header">
@@ -111,6 +115,11 @@ export default function PhotoDropZone({
                     <span className={`thumb-quality-badge thumb-quality-badge--${tier.cssClass}`}>
                       {tier.label}
                     </span>
+                    {(asset.width < 1080 || asset.height < 1080) && (
+                      <span className="thumb-dimension-badge">
+                        {asset.width}&times;{asset.height}
+                      </span>
+                    )}
                     <button
                       type="button"
                       className="thumb-remove"
@@ -164,6 +173,23 @@ export default function PhotoDropZone({
             })}
           </div>
         </>
+      )}
+
+      {hasSmallImages && (
+        <div className="photo-dimension-warning">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <div>
+            <strong>{smallImages.length} photo{smallImages.length > 1 ? 's are' : ' is'} below 1080px</strong>
+            <span> &mdash; these may look pixelated on social media. For best results, use images at least 1080&times;1080px.</span>
+            {smallImages.some((a) => a.width < 500 || a.height < 500) && (
+              <span className="photo-dimension-warning-tip"> If you saved images from Google, make sure you clicked through to the original website first &mdash; Google search results show small thumbnails.</span>
+            )}
+          </div>
+        </div>
       )}
 
       {!atLimit && (
