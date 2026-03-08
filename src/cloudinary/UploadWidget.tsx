@@ -85,7 +85,6 @@ export function UploadWidget({
           minImageHeight: 600,
           maxImageFileSize: 20_000_000,
           maxVideoFileSize: 100_000_000,
-          clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'mp4', 'mov', 'avi', 'webm'],
           ...(folder && { folder }),
           ...(metadataString && { metadata: metadataString }),
         },
