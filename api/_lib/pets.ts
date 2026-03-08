@@ -48,6 +48,8 @@ export function groupToPets(resources: CloudinaryResource[]) {
       sex: (md.pawprint_sex as string) || '',
       heroUrl: heroAsset?.secure_url || undefined,
       temperament: tempArray,
+      vaccination: (md.pawprint_vaccination as string) || '',
+      spayedNeutered: (md.pawprint_spayed_neutered as string) || '',
       shelterName: (md.pawprint_shelter_name as string) || '',
       shelterContact: (md.pawprint_shelter_contact as string) || '',
       shelterLocation: (md.pawprint_shelter_location as string) || '',

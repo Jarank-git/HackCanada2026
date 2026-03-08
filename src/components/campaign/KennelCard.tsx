@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Pet } from '../../types/pet';
-import { heroUrl } from '../../cloudinary/transformations';
 import { getProfileUrl } from '../../utils/profileUrl';
 
 interface KennelCardProps {
@@ -10,9 +9,9 @@ interface KennelCardProps {
 
 export default function KennelCard({ pet }: KennelCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const heroPublicId = pet.publicIds[0] ?? '';
-  const imgSrc = heroPublicId ? heroUrl(heroPublicId) : '';
   const profileUrl = getProfileUrl(pet.id);
+
+  const spayNeuterLabel = pet.sex === 'Female' ? 'Spayed' : pet.sex === 'Male' ? 'Neutered' : 'Spayed/Neutered';
 
   function handlePrint() {
     window.print();
@@ -32,27 +31,15 @@ export default function KennelCard({ pet }: KennelCardProps) {
       <div className="kennel-card" ref={cardRef}>
         {/* Logo */}
         <div className="kennel-card-logo">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#002b60" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="6.5" cy="5" rx="2" ry="2.5" />
-            <ellipse cx="17.5" cy="5" rx="2" ry="2.5" />
-            <ellipse cx="3.5" cy="11" rx="1.8" ry="2.2" />
-            <ellipse cx="20.5" cy="11" rx="1.8" ry="2.2" />
-            <ellipse cx="12" cy="15.5" rx="4.5" ry="4" />
-          </svg>
+          <img src="/pawprint-logo.png" alt="" width="22" height="22" />
           <span>PawPrint</span>
         </div>
 
         <div className="kennel-card-grid">
-          {/* Photo */}
-          {imgSrc && (
-            <div className="kennel-card-photo">
-              <img src={imgSrc} alt={`${pet.name} photo`} />
-            </div>
-          )}
-
-          {/* Info */}
+          {/* Details */}
           <div className="kennel-card-info">
             <h2 className="kennel-card-name">{pet.name}</h2>
+
             <div className="kennel-card-details">
               <span>{pet.breed}</span>
               <span>{pet.age} &middot; {pet.sex}</span>
@@ -66,22 +53,39 @@ export default function KennelCard({ pet }: KennelCardProps) {
               </div>
             )}
 
+            {/* Medical info */}
+            <div className="kennel-card-medical">
+              <div className="kennel-card-medical-row">
+                <span className="kennel-card-medical-label">Vaccination</span>
+                <span className={`kennel-card-medical-value ${pet.vaccination === 'Up to date' ? 'kennel-card-medical-value--good' : ''}`}>
+                  {pet.vaccination || 'Unknown'}
+                </span>
+              </div>
+              <div className="kennel-card-medical-row">
+                <span className="kennel-card-medical-label">{spayNeuterLabel}</span>
+                <span className={`kennel-card-medical-value ${pet.spayedNeutered === 'Yes' ? 'kennel-card-medical-value--good' : ''}`}>
+                  {pet.spayedNeutered || 'Unknown'}
+                </span>
+              </div>
+            </div>
+
             <div className="kennel-card-shelter">
               <strong>{pet.shelterName}</strong>
               {pet.shelterContact && <span>{pet.shelterContact}</span>}
               {pet.shelterLocation && <span>{pet.shelterLocation}</span>}
             </div>
+          </div>
 
-            <div className="kennel-card-qr">
-              <QRCodeSVG
-                value={profileUrl}
-                size={96}
-                fgColor="#002b60"
-                bgColor="#ffffff"
-                level="M"
-              />
-              <span className="kennel-card-scan-label">Scan to learn more!</span>
-            </div>
+          {/* QR Code */}
+          <div className="kennel-card-qr-section">
+            <QRCodeSVG
+              value={profileUrl}
+              size={120}
+              fgColor="#002b60"
+              bgColor="#ffffff"
+              level="M"
+            />
+            <span className="kennel-card-scan-label">Scan to learn more!</span>
           </div>
         </div>
       </div>

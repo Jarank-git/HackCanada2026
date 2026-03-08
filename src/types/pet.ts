@@ -7,6 +7,8 @@ export interface Pet {
   sex: string;
   heroUrl?: string;
   temperament: string[];
+  vaccination: string;
+  spayedNeutered: string;
   shelterName: string;
   shelterContact: string;
   shelterLocation: string;
@@ -23,6 +25,8 @@ export interface PetFormData {
   age: string;
   sex: string;
   temperament: string[];
+  vaccination: string;
+  spayedNeutered: string;
   shelterName: string;
   shelterContact: string;
   shelterLocation: string;

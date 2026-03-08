@@ -22,6 +22,8 @@ const INITIAL_FORM: PetFormData = {
   age: '',
   sex: '',
   temperament: [],
+  vaccination: '',
+  spayedNeutered: '',
   shelterName: '',
   shelterContact: '',
   shelterLocation: '',
@@ -75,6 +77,8 @@ export default function UploadPage() {
     if (formData.breed) md.pawprint_breed = formData.breed;
     if (formData.age) md.pawprint_age = formData.age;
     if (formData.sex) md.pawprint_sex = formData.sex.toLowerCase().replace(/\s+/g, '_');
+    if (formData.vaccination) md.pawprint_vaccination = formData.vaccination;
+    if (formData.spayedNeutered) md.pawprint_spayed_neutered = formData.spayedNeutered;
     if (formData.shelterName) md.pawprint_shelter_name = formData.shelterName;
     if (formData.shelterContact) md.pawprint_shelter_contact = formData.shelterContact;
     if (formData.shelterLocation) md.pawprint_shelter_location = formData.shelterLocation;

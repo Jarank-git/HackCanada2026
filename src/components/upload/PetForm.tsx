@@ -13,6 +13,8 @@ const TEMPERAMENT_OPTIONS = [
 
 const SPECIES_OPTIONS = ['Dog', 'Cat', 'Rabbit', 'Bird', 'Other'] as const;
 const SEX_OPTIONS = ['Male', 'Female', 'Unknown'] as const;
+const VACCINATION_OPTIONS = ['Up to date', 'Not up to date', 'Unknown'] as const;
+const SPAY_NEUTER_OPTIONS = ['Yes', 'No', 'Unknown'] as const;
 
 interface PetFormProps {
   value: PetFormData;
@@ -101,6 +103,40 @@ export default function PetForm({ value, onChange }: PetFormProps) {
             >
               <option value="">Select</option>
               {SEX_OPTIONS.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label" htmlFor="pet-vaccination">Vaccination Status</label>
+            <select
+              id="pet-vaccination"
+              className="form-input form-select"
+              value={value.vaccination}
+              onChange={(e) => update('vaccination', e.target.value)}
+            >
+              <option value="">Select</option>
+              {VACCINATION_OPTIONS.map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="pet-spay-neuter">
+              {value.sex === 'Female' ? 'Spayed' : value.sex === 'Male' ? 'Neutered' : 'Spayed / Neutered'}
+            </label>
+            <select
+              id="pet-spay-neuter"
+              className="form-input form-select"
+              value={value.spayedNeutered}
+              onChange={(e) => update('spayedNeutered', e.target.value)}
+            >
+              <option value="">Select</option>
+              {SPAY_NEUTER_OPTIONS.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
