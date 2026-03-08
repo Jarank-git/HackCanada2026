@@ -1,6 +1,7 @@
 interface CloudinaryResource {
   public_id: string;
   secure_url: string;
+  resource_type: string;
   metadata?: Record<string, string | string[]>;
   tags?: string[];
 }
@@ -57,6 +58,7 @@ export function groupToPets(resources: CloudinaryResource[]) {
       caption: (md.pawprint_caption as string) || '',
       galleryUrls: orderedAssets.map((a) => a.secure_url),
       publicIds: orderedAssets.map((a) => a.public_id),
+      resourceTypes: orderedAssets.map((a) => a.resource_type || 'image'),
     };
   });
 }

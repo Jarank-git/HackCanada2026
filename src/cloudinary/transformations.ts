@@ -2,7 +2,7 @@ import { cld } from './config';
 import { fill } from '@cloudinary/url-gen/actions/resize';
 import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
 import { format, quality } from '@cloudinary/url-gen/actions/delivery';
-import { auto as autoFormat } from '@cloudinary/url-gen/qualifiers/format';
+import { auto as autoFormat, jpg } from '@cloudinary/url-gen/qualifiers/format';
 import { autoBest, autoGood } from '@cloudinary/url-gen/qualifiers/quality';
 import { improve } from '@cloudinary/url-gen/actions/adjust';
 import { source } from '@cloudinary/url-gen/actions/overlay';
@@ -81,5 +81,21 @@ export function galleryUrl(publicId: string): string {
     .adjust(improve())
     .delivery(format(autoFormat()))
     .delivery(quality(autoBest()))
+    .toURL();
+}
+
+/** Generate a poster/thumbnail URL for a video asset (returns a jpg still frame) */
+export function videoThumbnailUrl(publicId: string): string {
+  return cld.video(publicId)
+    .resize(fill().width(900).height(600).gravity(autoGravity()))
+    .delivery(format(jpg()))
+    .delivery(quality(autoGood()))
+    .toURL();
+}
+
+/** Generate a playable video URL */
+export function videoUrl(publicId: string): string {
+  return cld.video(publicId)
+    .delivery(quality(autoGood()))
     .toURL();
 }

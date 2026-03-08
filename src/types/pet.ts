@@ -16,6 +16,7 @@ export interface Pet {
   caption: string;
   galleryUrls: string[];
   publicIds: string[];
+  resourceTypes: string[];
 }
 
 export interface PetFormData {

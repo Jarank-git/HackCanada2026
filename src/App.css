@@ -1745,6 +1745,43 @@
   cursor: default;
 }
 
+.lightbox-video {
+  max-width: 90vw;
+  max-height: 85vh;
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5);
+  cursor: default;
+  background: #000;
+}
+
+/* Video thumbnail in gallery grid */
+.pet-gallery-video-thumb {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.pet-gallery-video-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pet-gallery-play-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  transition: background 0.2s;
+}
+
+.pet-gallery-item:hover .pet-gallery-play-icon {
+  background: rgba(0, 0, 0, 0.45);
+}
+
 .lightbox-close {
   position: absolute;
   top: 1.25rem;
@@ -2728,6 +2765,19 @@
   text-align: center;
 }
 
+/* Stack kennel card grid in narrow sidebar */
+.pet-sidebar .kennel-card-grid {
+  grid-template-columns: 1fr;
+}
+
+.pet-sidebar .kennel-card-qr-section {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+}
+
 /* ── Download extras (QR + kennel side by side) ─ */
 .download-extras {
   display: grid;
@@ -2745,85 +2795,53 @@
 
 /* ── Print styles ────────────────────────────── */
 @media print {
-  /* Hide everything except the kennel card */
-  body > *,
-  .navbar,
-  .footer,
-  .layout-main > * {
-    display: none !important;
+  @page {
+    size: A5 landscape;
+    margin: 0;
   }
 
-  /* Keep the page wrapper visible so the kennel card can show */
-  body,
-  .layout,
-  .layout-main,
-  .page,
-  .download-page,
-  .pet-profile-page,
-  .download-extras,
-  .download-extras-col {
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-    overflow: visible !important;
+  /* Hide everything via visibility so layout is preserved */
+  body * {
+    visibility: hidden !important;
   }
 
-  /* Hide all siblings of the kennel card's ancestor chain */
-  .download-extras > *,
-  .pet-sidebar > *,
-  .pet-sidebar-card > * {
-    display: none !important;
+  /* Show the kennel card and all its descendants */
+  .kennel-card,
+  .kennel-card * {
+    visibility: visible !important;
   }
 
-  /* Show the kennel card container */
-  .download-extras-col:has(.kennel-card),
-  .pet-sidebar-card:has(.kennel-card) {
-    display: block !important;
-  }
-
+  /* Hide the print button even inside the kennel card */
   .kennel-card-print-btn {
     display: none !important;
   }
 
-  /* Show the kennel card */
+  /* Position the kennel card to fill the printed page */
   .kennel-card {
-    display: flex !important;
-    flex-direction: column;
+    position: fixed !important;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: none;
+    max-width: none !important;
     aspect-ratio: auto;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    padding: 12mm;
-    margin: 0;
-    background: #fff;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 12mm !important;
+    margin: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  .kennel-card * {
-    overflow: visible !important;
-  }
-
   .kennel-card-grid {
-    flex: 1;
-    min-height: 0;
+    grid-template-columns: 1fr auto !important;
   }
 
   .kennel-card-qr-section {
     break-inside: avoid;
     page-break-inside: avoid;
-  }
-
-  .kennel-card-info {
-    overflow: visible;
-  }
-
-  @page {
-    size: A5 landscape;
-    margin: 0;
   }
 }
 

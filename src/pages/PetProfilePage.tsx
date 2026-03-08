@@ -233,8 +233,10 @@ export default function PetProfilePage() {
           {/* Gallery */}
           {pet.publicIds.length > 1 && (
             <div className="pet-gallery-section">
-              <h2 className="pet-section-title">Photos</h2>
-              <PetGallery publicIds={pet.publicIds} />
+              <h2 className="pet-section-title">
+                {pet.resourceTypes?.some((t) => t === 'video') ? 'Photos & Videos' : 'Photos'}
+              </h2>
+              <PetGallery publicIds={pet.publicIds} resourceTypes={pet.resourceTypes} />
             </div>
           )}
         </div>
