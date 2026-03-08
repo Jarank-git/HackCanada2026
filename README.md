@@ -132,7 +132,7 @@ For **video assets**, transformations extract a JPG still frame for previews and
 
 ## Gemini AI Integration
 
-PawPrint uses the Google Gemini 2.0 Flash API to generate captions and analyze uploaded photos. All AI calls are routed through Vercel serverless functions that hold the API key.
+PawPrint uses the Google Gemini 2.0 Flash API to generate captions and analyze uploaded photos. All AI calls are routed through Vercel serverless functions that contain the API key.
 
 ### General Caption Generation
 
