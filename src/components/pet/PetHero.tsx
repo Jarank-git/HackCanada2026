@@ -23,7 +23,7 @@ export default function PetHero({ publicId, petName, resourceType = 'image' }: P
     return (
       <div className="pet-hero-container">
         <video src={videoSrc} width={1200} height={800} controls muted playsInline />
-        <div className="pet-hero-overlay">
+        <div className="pet-hero-overlay pet-hero-overlay--video">
           <h1 className="pet-hero-name">{petName}</h1>
         </div>
       </div>
