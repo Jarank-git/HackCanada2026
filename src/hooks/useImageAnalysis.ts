@@ -70,8 +70,8 @@ export function useImageAnalysis(
     abortRef.current = false;
     setIsAnalyzing(true);
 
-    // Only analyze images that don't already have a cached result
-    const toAnalyze = assets.filter((a) => !results[a.publicId]?.analysis);
+    // Only analyze images (not videos) that don't already have a cached result
+    const toAnalyze = assets.filter((a) => a.resourceType !== 'video' && !results[a.publicId]?.analysis);
 
     // Process in batches of CONCURRENCY
     for (let i = 0; i < toAnalyze.length; i += CONCURRENCY) {

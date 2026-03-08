@@ -332,165 +332,141 @@ export default function UploadPage() {
                 </div>
               </div>
 
-              {/* Per-image analysis cards */}
-              {assets.length > 1 && (
-                <div className="review-image-analysis">
-                  <div className="review-image-analysis-header">
-                    <h3 className="review-image-analysis-title">Per-Photo Analysis</h3>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={analyzeAll}
-                      disabled={isAnalyzing || !online}
-                      title={!online ? 'AI analysis requires an internet connection' : undefined}
-                    >
-                      {isAnalyzing ? (
-                        <span className="upload-spinner">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
-                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                          </svg>
-                          Analyzing...
-                        </span>
-                      ) : (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
-                          </svg>
-                          Analyze All Photos with AI
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="review-image-analysis-grid">
-                    {assets.map((asset, idx) => {
-                      const isVid = asset.resourceType === 'video';
-                      const isHero = heroAsset?.publicId === asset.publicId;
-                      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dp498emx3';
+              {/* Per-image analysis cards — images only, videos are excluded */}
+              {assets.filter((a) => a.resourceType !== 'video').length > 1 && (() => {
+                const imageAssets = assets.filter((a) => a.resourceType !== 'video');
+                const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dp498emx3';
+                return (
+                  <div className="review-image-analysis">
+                    <div className="review-image-analysis-header">
+                      <h3 className="review-image-analysis-title">Per-Photo Analysis</h3>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={analyzeAll}
+                        disabled={isAnalyzing || !online}
+                        title={!online ? 'AI analysis requires an internet connection' : undefined}
+                      >
+                        {isAnalyzing ? (
+                          <span className="upload-spinner">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
+                              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                            </svg>
+                            Analyzing...
+                          </span>
+                        ) : (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
+                            </svg>
+                            Analyze All Photos with AI
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="review-image-analysis-grid">
+                      {imageAssets.map((asset, idx) => {
+                        const isHero = heroAsset?.publicId === asset.publicId;
+                        const heuristicAnalysis = analyzeImage(asset, assets, heroAsset?.publicId ?? null);
+                        const aiState = aiResults[asset.publicId];
+                        const hasAI = !!aiState?.analysis;
+                        const aiLoading = !!aiState?.loading;
+                        const aiError = aiState?.error ?? null;
+                        const tier = getQualityTier(asset.qualityScore);
+                        const pct = getQualityPercent(asset.qualityScore);
 
-                      // Videos just get a preview player, no per-photo analysis
-                      if (isVid) {
+                        // Use AI analysis when available, fall back to heuristic
+                        const reasoning = hasAI ? aiState.analysis!.heroSuitability : heuristicAnalysis.heroReasoning;
+                        const enhancements = hasAI ? aiState.analysis!.enhancements : heuristicAnalysis.enhancements;
+                        const note = hasAI ? aiState.analysis!.overallNote : heuristicAnalysis.overallNote;
+                        const suggestions = hasAI ? aiState.analysis!.suggestedTransformations : [];
+
+                        const beforeUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_center/f_auto,q_auto/${asset.publicId}`;
+                        const afterUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_auto/e_improve/f_auto,q_90/${asset.publicId}`;
+
                         return (
-                          <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}`}>
+                          <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}${aiLoading ? ' review-image-card--loading' : ''}`}>
                             <div className="review-image-card-header">
                               <div className="review-image-card-meta">
                                 <span className="review-image-card-label">
-                                  Video {idx + 1}
+                                  Photo {idx + 1}
                                   {isHero && <span className="review-image-card-hero-tag">Hero</span>}
+                                  {hasAI && <span className="review-image-card-ai-tag">AI Analyzed</span>}
+                                </span>
+                                <span className={`review-image-card-tier review-image-card-tier--${tier.cssClass}`}>
+                                  {tier.label} &middot; {pct}%
                                 </span>
                               </div>
                             </div>
-                            <div className="review-video-preview">
-                              <video
-                                src={`https://res.cloudinary.com/${cloudName}/video/upload/c_fill,w_480,h_270,g_auto/q_auto/${asset.publicId}`}
-                                className="review-video-player"
-                                controls
-                                muted
-                                playsInline
-                              />
+
+                            <div className="review-before-after">
+                              <div className="review-before-after-pane">
+                                <span className="review-before-after-label review-before-after-label--before">Before</span>
+                                <img src={beforeUrl} alt="Original" className="review-before-after-img" />
+                              </div>
+                              <div className="review-before-after-arrow">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <line x1="5" y1="12" x2="19" y2="12" />
+                                  <polyline points="12 5 19 12 12 19" />
+                                </svg>
+                              </div>
+                              <div className="review-before-after-pane">
+                                <span className="review-before-after-label review-before-after-label--after">After</span>
+                                <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
+                              </div>
                             </div>
+
+                            {aiLoading ? (
+                              <div className="review-image-card-shimmer">
+                                <div className="shimmer-line shimmer-line--long" />
+                                <div className="shimmer-line shimmer-line--medium" />
+                                <div className="shimmer-line shimmer-line--short" />
+                                <div className="shimmer-line shimmer-line--long" />
+                              </div>
+                            ) : (
+                              <>
+                                <p className="review-image-card-reasoning">{reasoning}</p>
+                                <ul className="review-image-card-edits">
+                                  {enhancements.map((e, i) => (
+                                    <li key={i}>
+                                      <strong>{e.label}:</strong> {e.description}
+                                    </li>
+                                  ))}
+                                </ul>
+                                <p className="review-image-card-note">{note}</p>
+
+                                {suggestions.length > 0 && (
+                                  <div className="review-image-card-suggestions">
+                                    <span className="review-image-card-suggestions-label">Suggested Transformations</span>
+                                    <ul>
+                                      {suggestions.map((s, i) => (
+                                        <li key={i}>{s}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {aiError && (
+                                  <div className="review-image-card-error">
+                                    <span>AI analysis failed</span>
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary btn-xs"
+                                      onClick={() => analyzeOne(asset.publicId)}
+                                    >
+                                      Retry
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            )}
                           </div>
                         );
-                      }
-
-                      const heuristicAnalysis = analyzeImage(asset, assets, heroAsset?.publicId ?? null);
-                      const aiState = aiResults[asset.publicId];
-                      const hasAI = !!aiState?.analysis;
-                      const aiLoading = !!aiState?.loading;
-                      const aiError = aiState?.error ?? null;
-                      const tier = getQualityTier(asset.qualityScore);
-                      const pct = getQualityPercent(asset.qualityScore);
-
-                      // Use AI analysis when available, fall back to heuristic
-                      const reasoning = hasAI ? aiState.analysis!.heroSuitability : heuristicAnalysis.heroReasoning;
-                      const enhancements = hasAI ? aiState.analysis!.enhancements : heuristicAnalysis.enhancements;
-                      const note = hasAI ? aiState.analysis!.overallNote : heuristicAnalysis.overallNote;
-                      const suggestions = hasAI ? aiState.analysis!.suggestedTransformations : [];
-
-                      const beforeUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_center/f_auto,q_auto/${asset.publicId}`;
-                      const afterUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_auto/e_improve/f_auto,q_90/${asset.publicId}`;
-
-                      return (
-                        <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}${aiLoading ? ' review-image-card--loading' : ''}`}>
-                          <div className="review-image-card-header">
-                            <div className="review-image-card-meta">
-                              <span className="review-image-card-label">
-                                Photo {idx + 1}
-                                {isHero && <span className="review-image-card-hero-tag">Hero</span>}
-                                {hasAI && <span className="review-image-card-ai-tag">AI Analyzed</span>}
-                              </span>
-                              <span className={`review-image-card-tier review-image-card-tier--${tier.cssClass}`}>
-                                {tier.label} &middot; {pct}%
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="review-before-after">
-                            <div className="review-before-after-pane">
-                              <span className="review-before-after-label review-before-after-label--before">Before</span>
-                              <img src={beforeUrl} alt="Original" className="review-before-after-img" />
-                            </div>
-                            <div className="review-before-after-arrow">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                                <polyline points="12 5 19 12 12 19" />
-                              </svg>
-                            </div>
-                            <div className="review-before-after-pane">
-                              <span className="review-before-after-label review-before-after-label--after">After</span>
-                              <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
-                            </div>
-                          </div>
-
-                          {aiLoading ? (
-                            <div className="review-image-card-shimmer">
-                              <div className="shimmer-line shimmer-line--long" />
-                              <div className="shimmer-line shimmer-line--medium" />
-                              <div className="shimmer-line shimmer-line--short" />
-                              <div className="shimmer-line shimmer-line--long" />
-                            </div>
-                          ) : (
-                            <>
-                              <p className="review-image-card-reasoning">{reasoning}</p>
-                              <ul className="review-image-card-edits">
-                                {enhancements.map((e, i) => (
-                                  <li key={i}>
-                                    <strong>{e.label}:</strong> {e.description}
-                                  </li>
-                                ))}
-                              </ul>
-                              <p className="review-image-card-note">{note}</p>
-
-                              {suggestions.length > 0 && (
-                                <div className="review-image-card-suggestions">
-                                  <span className="review-image-card-suggestions-label">Suggested Transformations</span>
-                                  <ul>
-                                    {suggestions.map((s, i) => (
-                                      <li key={i}>{s}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {aiError && (
-                                <div className="review-image-card-error">
-                                  <span>AI analysis failed</span>
-                                  <button
-                                    type="button"
-                                    className="btn btn-secondary btn-xs"
-                                    onClick={() => analyzeOne(asset.publicId)}
-                                  >
-                                    Retry
-                                  </button>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div className="preview-caption-section">
                 <div className="preview-caption-header">
