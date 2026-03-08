@@ -39,6 +39,11 @@ function groupToPets(resources: CloudinaryResource[]) {
             .filter(Boolean)
         : [];
 
+    // Ensure hero-tagged asset is first in the arrays
+    const orderedAssets = heroAsset
+      ? [heroAsset, ...assets.filter((a) => a !== heroAsset)]
+      : assets;
+
     return {
       id: petId,
       name: (md.pawprint_pet_name as string) || "",
@@ -53,8 +58,8 @@ function groupToPets(resources: CloudinaryResource[]) {
       shelterLocation: (md.pawprint_shelter_location as string) || "",
       status: (md.pawprint_status as string) || "Available",
       caption: (md.pawprint_caption as string) || "",
-      galleryUrls: assets.map((a) => a.secure_url),
-      publicIds: assets.map((a) => a.public_id),
+      galleryUrls: orderedAssets.map((a) => a.secure_url),
+      publicIds: orderedAssets.map((a) => a.public_id),
     };
   });
 }

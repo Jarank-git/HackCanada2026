@@ -69,6 +69,38 @@ export async function analyzeImageForPet(
   return data.analysis;
 }
 
+export interface PhotoTip {
+  title: string;
+  description: string;
+}
+
+export async function getPhotoTipsForImage(
+  imageUrl: string,
+  petData: PetFormData,
+  context: { totalUploaded: number; avgQuality: number },
+): Promise<PhotoTip[]> {
+  const res = await fetch(`${BASE_URL}/photo-tips`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      imageUrl,
+      petName: petData.name,
+      species: petData.species,
+      breed: petData.breed,
+      totalUploaded: context.totalUploaded,
+      avgQuality: context.avgQuality,
+    }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error || 'Failed to generate photo tips');
+  }
+
+  const data = await res.json();
+  return data.tips;
+}
+
 export async function generatePlatformCaptionsForPet(petData: PetFormData): Promise<PlatformCaptions> {
   const res = await fetch(`${BASE_URL}/platform-captions`, {
     method: 'POST',

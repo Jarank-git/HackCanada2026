@@ -11,6 +11,7 @@ import { generatePetId } from '../utils/petId';
 import { getQualityTier, getQualityPercent } from '../utils/qualityTier';
 import { analyzeImage } from '../utils/photoAnalysis';
 import { savePetCaption, savePetTemperament } from '../api/cloudinaryProxy';
+import { getPhotoTipsForImage, type PhotoTip } from '../api/gemini';
 import ErrorBanner from '../components/ui/ErrorBanner';
 import type { PetFormData, UploadedAsset } from '../types/pet';
 
@@ -39,6 +40,8 @@ export default function UploadPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [editedCaption, setEditedCaption] = useState('');
   const [manualHeroId, setManualHeroId] = useState<string | null>(null);
+  const [aiTips, setAiTips] = useState<PhotoTip[] | null>(null);
+  const [aiTipsLoading, setAiTipsLoading] = useState(false);
 
   // Pick hero photo: manual override first, then highest quality score, fallback to first
   const heroAsset = useMemo(() => {
@@ -81,8 +84,27 @@ export default function UploadPage() {
   const uploadFolder = `pawprint/pets/${petId}`;
 
   const handleAddAsset = useCallback((asset: UploadedAsset) => {
-    setAssets((prev) => [...prev, asset]);
-  }, []);
+    setAssets((prev) => {
+      const updated = [...prev, asset];
+
+      // Trigger AI tips for the newly uploaded image
+      setAiTipsLoading(true);
+      const scored = updated.filter((a) => a.qualityScore !== null);
+      const avgQuality = scored.length > 0
+        ? scored.reduce((sum, a) => sum + a.qualityScore!, 0) / scored.length
+        : 0;
+
+      getPhotoTipsForImage(asset.secureUrl, formData, {
+        totalUploaded: updated.length,
+        avgQuality,
+      })
+        .then((tips) => setAiTips(tips))
+        .catch(() => setAiTips(null))
+        .finally(() => setAiTipsLoading(false));
+
+      return updated;
+    });
+  }, [formData]);
 
   const handleRemoveAsset = useCallback((publicId: string) => {
     setAssets((prev) => prev.filter((a) => a.publicId !== publicId));
@@ -179,6 +201,8 @@ export default function UploadPage() {
                 metadata={uploadMetadata}
                 heroPublicId={heroAsset?.publicId ?? null}
                 onSetHero={handleSetHero}
+                aiTips={aiTips}
+                aiTipsLoading={aiTipsLoading}
               />
             </>
           )}

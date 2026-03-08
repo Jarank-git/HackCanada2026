@@ -143,6 +143,60 @@ Rules for suggestedTransformations:
   }
 }
 
+export interface PhotoTip {
+  title: string;
+  description: string;
+}
+
+export async function generatePhotoTips(
+  imageUrl: string,
+  petInfo: { name: string; species: string; breed: string },
+  context: { totalUploaded: number; avgQuality: number },
+): Promise<PhotoTip[]> {
+  const resizedUrl = imageUrl.replace('/upload/', '/upload/c_fill,w_600,h_400,q_auto/');
+  const imageRes = await fetch(resizedUrl);
+  if (!imageRes.ok) throw new Error(`Failed to fetch image: ${imageRes.status}`);
+
+  const arrayBuffer = await imageRes.arrayBuffer();
+  const base64 = Buffer.from(arrayBuffer).toString('base64');
+  const contentType = imageRes.headers.get('content-type') || 'image/jpeg';
+
+  const prompt = `You are PawPrint, a pet adoption photo coach. Analyze this shelter pet photo and give 2-3 short, actionable tips to improve the adoption campaign.
+
+Pet: ${petInfo.name || 'Unknown'}, a ${petInfo.breed || petInfo.species || 'pet'}
+Photos uploaded so far: ${context.totalUploaded}
+Average quality score: ${context.avgQuality > 0 ? Math.round(context.avgQuality * 100) + '%' : 'N/A'}
+
+Based on what you ACTUALLY SEE in this photo, suggest what the volunteer should photograph NEXT or how to improve. Consider:
+- What type of shot is this? (close-up, full-body, action, etc.)
+- What's missing from the campaign? (e.g., outdoor shot, interaction with people, different angle)
+- Any quality issues? (lighting, blur, background clutter)
+- What would make adopters connect emotionally?
+
+Return ONLY a valid JSON array (no markdown, no code fences):
+[{"title":"Short tip title (5 words max)","description":"1 sentence explaining why and how"}]
+
+Rules:
+- 2-3 tips only
+- Be specific to what you see — don't give generic advice
+- Reference actual visual elements (e.g., "the indoor fluorescent lighting" not "the lighting")
+- If quality is good, suggest variety/composition tips instead
+- Keep descriptions under 120 characters`;
+
+  const raw = await callGeminiMultimodal(base64, contentType, prompt);
+
+  let cleaned = raw;
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+  }
+
+  try {
+    return JSON.parse(cleaned) as PhotoTip[];
+  } catch {
+    throw new Error('Failed to parse photo tips from Gemini response');
+  }
+}
+
 export async function generateCaption(petData: PetData): Promise<string> {
   const prompt = `Write a warm, engaging adoption caption for a social media post about a shelter pet. The caption should be 2-3 sentences, highlight the pet's personality, and include a call to action. Do not use hashtags. Pet details: Name: ${petData.name}, Species: ${petData.species}, Breed: ${petData.breed}, Age: ${petData.age}, Sex: ${petData.sex}, Temperament: ${petData.temperament.join(', ')}. Return only the caption text, nothing else.`;
 
@@ -154,29 +208,44 @@ export async function generatePlatformCaptions(petData: PetData): Promise<Platfo
     ? petData.temperament.join(', ')
     : 'friendly';
 
-  const prompt = `Generate tailored social media adoption captions for a shelter pet. Each caption must match the platform's style, audience, and character limits. Include trending, relevant hashtags for pet adoption.
+  const breedTag = petData.breed
+    ? petData.breed.toLowerCase().replace(/[\s-]+/g, '')
+    : '';
+  const speciesTag = petData.species.toLowerCase();
+
+  const prompt = `You are a social media marketing expert specializing in animal rescue and pet adoption campaigns. Generate COMPLETELY UNIQUE captions for each platform — each must use different wording, tone, structure, and angle. Do NOT rephrase or recycle the same sentences across platforms.
 
 Pet details:
 - Name: ${petData.name}
 - Species: ${petData.species}
-- Breed: ${petData.breed || 'Mixed'}
+- Breed: ${petData.breed || 'Mixed breed'}
 - Age: ${petData.age || 'Unknown'}
 - Sex: ${petData.sex || 'Unknown'}
-- Personality: ${temperamentStr}
+- Personality traits: ${temperamentStr}
 
-Generate captions for these platforms:
+CRITICAL RULES FOR HASHTAGS:
+- Only use REAL hashtags that actually exist and are actively used on each platform
+- Mix high-volume hashtags (100K+ posts) with niche ones for best reach
+- Every platform's hashtag set must be DIFFERENT — do not copy-paste the same tags
+- Include breed-specific tags when applicable (e.g., #${breedTag || speciesTag + 'sof' + 'instagram'}, #${breedTag || speciesTag + 'lover'})
+- Include adoption/rescue tags (e.g., #AdoptDontShop, #RescueDog, #ShelterPetsRock, #ForeverHome)
+- Include engagement tags specific to each platform's algorithm
+- NO made-up hashtags — every tag must be one that real users search for and follow
+- Do NOT include the # symbol in the hashtags array — just the tag text
 
-1. "instagram_feed" — Warm, emotional, use emoji naturally. 2-3 sentences with a call to action. Include 8-10 hashtags mixing popular adoption tags with breed-specific ones.
+Generate captions for these 5 platforms:
 
-2. "instagram_story" — Super short punchy 1-liner with emoji, designed to make people swipe up or tap. Max 80 characters for the caption. Include 3-4 hashtags.
+1. "instagram_feed" — Warm, emotional storytelling with natural emoji use. 2-3 sentences that tug at heartstrings, highlight ${petData.name}'s personality, and end with a clear adoption CTA. Include 8-12 hashtags mixing: popular adoption tags, breed-specific tags, pet community tags, and location/discovery tags.
 
-3. "twitter" — Concise, witty, conversational. The caption + hashtags together must fit under 280 characters. Include 3-5 hashtags.
+2. "instagram_story" — Ultra-short punchy 1-liner with emoji that creates urgency or curiosity. Max 80 characters. Designed to make people tap "See More". Include 3-5 relevant hashtags (Stories show fewer).
 
-4. "facebook" — Longer, storytelling tone. 3-4 sentences that paint a picture of life with this pet. Community-focused call to action (share, tag a friend). Include 5-6 hashtags.
+3. "twitter" — Witty, conversational, personality-forward. Different angle than Instagram — be clever or humorous. The caption + all hashtags together MUST fit under 280 characters total. Include 2-4 hashtags inline or at end.
 
-5. "youtube_thumb" — Short attention-grabbing title text only, like a YouTube thumbnail overlay. Max 50 characters. No hashtags needed (return empty array).
+4. "facebook" — Longer community-focused storytelling. 3-4 sentences painting a picture of daily life with ${petData.name}. Appeal to emotion and community (ask people to share, tag friends who need a ${speciesTag}). Include 5-7 hashtags focused on community and sharing.
 
-Return ONLY a valid JSON object in this exact format (no markdown, no code fences, no extra text):
+5. "youtube_thumb" — Bold, attention-grabbing title overlay text ONLY. Max 50 characters. Think YouTube thumbnail text — dramatic, curiosity-driven, uses caps strategically. Return empty hashtags array.
+
+Return ONLY a valid JSON object (no markdown, no code fences, no extra text):
 {"instagram_feed":{"caption":"...","hashtags":["adoptdontshop","rescuedog",...]},"instagram_story":{"caption":"...","hashtags":["adopt","rescuedog"]},"twitter":{"caption":"...","hashtags":["AdoptDontShop","RescuePets"]},"facebook":{"caption":"...","hashtags":["adoptdontshop","shelterpets"]},"youtube_thumb":{"caption":"...","hashtags":[]}}`;
 
   const raw = await callGemini(prompt);

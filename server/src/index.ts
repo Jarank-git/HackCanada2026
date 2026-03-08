@@ -4,6 +4,8 @@ import cors from "cors";
 import petsRouter from "./routes/pets.js";
 import tagHeroRouter from "./routes/tag-hero.js";
 import captionRouter from "./routes/caption.js";
+import photoTipsRouter from "./routes/photo-tips.js";
+import platformCaptionsRouter from "./routes/platform-captions.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -18,6 +20,8 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/pets", petsRouter);
 app.use("/api/tag-hero", tagHeroRouter);
 app.use("/api/caption", captionRouter);
+app.use("/api/photo-tips", photoTipsRouter);
+app.use("/api/platform-captions", platformCaptionsRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

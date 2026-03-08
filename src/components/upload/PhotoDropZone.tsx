@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { UploadedAsset } from '../../types/pet';
+import type { PhotoTip } from '../../api/gemini';
 import { UploadWidget, type CloudinaryUploadResult } from '../../cloudinary/UploadWidget';
 import { getQualityTier } from '../../utils/qualityTier';
 import { analyzeImage, getPhotoSuggestions } from '../../utils/photoAnalysis';
@@ -13,6 +14,8 @@ interface PhotoDropZoneProps {
   metadata?: Record<string, string>;
   heroPublicId?: string | null;
   onSetHero?: (publicId: string) => void;
+  aiTips?: PhotoTip[] | null;
+  aiTipsLoading?: boolean;
 }
 
 export default function PhotoDropZone({
@@ -24,6 +27,8 @@ export default function PhotoDropZone({
   metadata,
   heroPublicId,
   onSetHero,
+  aiTips,
+  aiTipsLoading,
 }: PhotoDropZoneProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -193,24 +198,62 @@ export default function PhotoDropZone({
         <p className="drop-zone-limit">Maximum photos reached.</p>
       )}
 
-      {/* Photo suggestions */}
-      {assets.length > 0 && suggestions.length > 0 && (
-        <div className="photo-suggestions">
+      {/* Photo suggestions — AI-driven when available, fallback to heuristic */}
+      {assets.length > 0 && (aiTipsLoading || (aiTips && aiTips.length > 0) || suggestions.length > 0) && (
+        <div className={`photo-suggestions${aiTips && aiTips.length > 0 ? ' photo-suggestions--ai' : ''}`}>
           <span className="photo-suggestions-title">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-            Tips to boost your campaign
+            {aiTipsLoading ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Analyzing your photo...
+              </>
+            ) : aiTips && aiTips.length > 0 ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
+                </svg>
+                AI Photo Coach
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                Tips to boost your campaign
+              </>
+            )}
           </span>
           <div className="photo-suggestions-list">
-            {suggestions.map((s, i) => (
-              <div key={i} className="photo-suggestion-item">
-                <span className="photo-suggestion-title">{s.title}</span>
-                <span className="photo-suggestion-desc">{s.description}</span>
-              </div>
-            ))}
+            {aiTipsLoading ? (
+              <>
+                <div className="photo-suggestion-item photo-suggestion-item--shimmer">
+                  <span className="shimmer-line shimmer-line--medium" />
+                  <span className="shimmer-line shimmer-line--long" />
+                </div>
+                <div className="photo-suggestion-item photo-suggestion-item--shimmer">
+                  <span className="shimmer-line shimmer-line--short" />
+                  <span className="shimmer-line shimmer-line--medium" />
+                </div>
+              </>
+            ) : aiTips && aiTips.length > 0 ? (
+              aiTips.map((tip, i) => (
+                <div key={i} className="photo-suggestion-item">
+                  <span className="photo-suggestion-title">{tip.title}</span>
+                  <span className="photo-suggestion-desc">{tip.description}</span>
+                </div>
+              ))
+            ) : (
+              suggestions.map((s, i) => (
+                <div key={i} className="photo-suggestion-item">
+                  <span className="photo-suggestion-title">{s.title}</span>
+                  <span className="photo-suggestion-desc">{s.description}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePet } from '../hooks/usePet';
 import { generateCaptionForPet } from '../api/gemini';
@@ -29,6 +29,7 @@ export default function PetProfilePage() {
   const [caption, setCaption] = useState<string | null>(null);
   const [captionLoading, setCaptionLoading] = useState(false);
   const [captionError, setCaptionError] = useState<string | null>(null);
+  const autoGenerateAttempted = useRef(false);
 
   const displayCaption = caption ?? pet?.caption ?? '';
 
@@ -62,6 +63,14 @@ export default function PetProfilePage() {
       setCaptionLoading(false);
     }
   }
+
+  // Auto-generate caption if none exists when pet loads
+  useEffect(() => {
+    if (pet && !pet.caption && !caption && !autoGenerateAttempted.current) {
+      autoGenerateAttempted.current = true;
+      handleGenerateCaption();
+    }
+  }, [pet]);
 
   /* ── Loading skeleton ──────────────────────── */
   if (loading) {
@@ -133,44 +142,72 @@ export default function PetProfilePage() {
           <PetDetails pet={pet} />
 
           {/* AI caption */}
-          {displayCaption ? (
-            <blockquote className="pet-caption">
-              <span className="section-label">AI-Generated Caption</span>
-              <p>{displayCaption}</p>
-            </blockquote>
-          ) : (
-            <div className="pet-caption-generate">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleGenerateCaption}
-                disabled={captionLoading}
-              >
-                {captionLoading ? (
-                  <span className="upload-spinner">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                    Generating Caption...
-                  </span>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                      <path d="M2 17l10 5 10-5" />
-                      <path d="M2 12l10 5 10-5" />
-                    </svg>
-                    Generate AI Caption
-                  </>
-                )}
-              </button>
-              {captionError && (
-                <div style={{ marginTop: '0.75rem' }}>
-                  <ErrorBanner message={captionError} onRetry={handleGenerateCaption} />
+          <div className="pet-caption-section">
+            {captionLoading && !displayCaption ? (
+              <blockquote className="pet-caption pet-caption--loading">
+                <span className="section-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  Generating Caption...
+                </span>
+                <div className="caption-shimmer">
+                  <div className="shimmer-line shimmer-line--long" />
+                  <div className="shimmer-line shimmer-line--medium" />
+                  <div className="shimmer-line shimmer-line--short" />
                 </div>
-              )}
-            </div>
-          )}
+              </blockquote>
+            ) : displayCaption ? (
+              <blockquote className="pet-caption">
+                <div className="pet-caption-header">
+                  <span className="section-label">AI-Generated Caption</span>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={handleGenerateCaption}
+                    disabled={captionLoading}
+                  >
+                    {captionLoading ? (
+                      <span className="upload-spinner">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        </svg>
+                        Regenerating...
+                      </span>
+                    ) : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 4v6h-6" />
+                          <path d="M1 20v-6h6" />
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                        </svg>
+                        Regenerate
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p>{displayCaption}</p>
+              </blockquote>
+            ) : (
+              <blockquote className="pet-caption pet-caption--empty">
+                <span className="section-label">AI-Generated Caption</span>
+                <p className="pet-caption-placeholder">Caption could not be generated.</p>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleGenerateCaption}
+                  disabled={captionLoading}
+                >
+                  Try Again
+                </button>
+              </blockquote>
+            )}
+            {captionError && (
+              <div style={{ marginTop: '0.75rem' }}>
+                <ErrorBanner message={captionError} onRetry={handleGenerateCaption} />
+              </div>
+            )}
+          </div>
 
           {/* Gallery */}
           {pet.publicIds.length > 1 && (
