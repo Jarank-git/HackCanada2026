@@ -93,6 +93,7 @@ export function videoPlatformUrl(publicId: string, platform: PlatformKey): strin
   const { width, height } = PLATFORM_DIMENSIONS[platform];
   return cld.video(publicId)
     .resize(fill().width(width).height(height).gravity(autoGravity()))
+    .delivery(format(autoFormat()))
     .delivery(quality(autoBest()))
     .toURL();
 }

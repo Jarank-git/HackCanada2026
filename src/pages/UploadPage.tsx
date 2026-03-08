@@ -12,7 +12,7 @@ import { getQualityTier, getQualityPercent } from '../utils/qualityTier';
 import { analyzeImage } from '../utils/photoAnalysis';
 import { savePetCaption, savePetTemperament } from '../api/cloudinaryProxy';
 import { getPhotoTipsForImage, type PhotoTip } from '../api/gemini';
-import { assetHeroUrl, assetAnalysisUrl, videoUrl } from '../cloudinary/transformations';
+import { assetHeroUrl, assetAnalysisUrl } from '../cloudinary/transformations';
 import ErrorBanner from '../components/ui/ErrorBanner';
 import type { PetFormData, UploadedAsset } from '../types/pet';
 
@@ -392,11 +392,7 @@ export default function UploadPage() {
                           <div className="review-before-after">
                             <div className="review-before-after-pane">
                               <span className="review-before-after-label review-before-after-label--before">Before</span>
-                              {isVid ? (
-                                <video src={videoUrl(asset.publicId)} className="review-before-after-img" controls muted />
-                              ) : (
-                                <img src={beforeUrl} alt="Original" className="review-before-after-img" />
-                              )}
+                              <img src={beforeUrl} alt="Original" className="review-before-after-img" />
                             </div>
                             <div className="review-before-after-arrow">
                               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -406,11 +402,7 @@ export default function UploadPage() {
                             </div>
                             <div className="review-before-after-pane">
                               <span className="review-before-after-label review-before-after-label--after">After</span>
-                              {isVid ? (
-                                <video src={videoUrl(asset.publicId)} className="review-before-after-img" controls muted />
-                              ) : (
-                                <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
-                              )}
+                              <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
                             </div>
                           </div>
 
