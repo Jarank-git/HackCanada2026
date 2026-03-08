@@ -380,12 +380,8 @@ export default function UploadPage() {
 
                       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dp498emx3';
                       const isVid = asset.resourceType === 'video';
-                      const resPrefix = isVid ? 'video' : 'image';
-                      const fmtSuffix = isVid ? 'f_jpg' : 'f_auto';
-                      const beforeUrl = `https://res.cloudinary.com/${cloudName}/${resPrefix}/upload/c_fill,w_240,h_180,g_center/${fmtSuffix},q_auto/${asset.publicId}`;
-                      // e_improve is image-only; for videos the enhancement is smart cropping (g_auto)
-                      const afterEnhance = isVid ? '' : 'e_improve/';
-                      const afterUrl = `https://res.cloudinary.com/${cloudName}/${resPrefix}/upload/c_fill,w_240,h_180,g_auto/${afterEnhance}${fmtSuffix},q_90/${asset.publicId}`;
+                      const beforeUrl = isVid ? '' : `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_center/f_auto,q_auto/${asset.publicId}`;
+                      const afterUrl = isVid ? '' : `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_auto/e_improve/f_auto,q_90/${asset.publicId}`;
 
                       return (
                         <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}${aiLoading ? ' review-image-card--loading' : ''}`}>
@@ -403,18 +399,15 @@ export default function UploadPage() {
                           </div>
 
                           {isVid ? (
-                            <div className="review-before-after">
-                              <div className="review-before-after-pane review-before-after-pane--full">
-                                <span className="review-before-after-label review-before-after-label--after">Preview</span>
-                                <video
-                                  src={`https://res.cloudinary.com/${cloudName}/video/upload/c_fill,w_480,h_270,g_auto/q_auto/${asset.publicId}`}
-                                  className="review-before-after-img"
-                                  controls
-                                  muted
-                                  playsInline
-                                  style={{ objectFit: 'contain', aspectRatio: 'auto', background: '#000' }}
-                                />
-                              </div>
+                            <div className="review-video-preview">
+                              <span className="review-video-preview-label">Preview</span>
+                              <video
+                                src={`https://res.cloudinary.com/${cloudName}/video/upload/c_fill,w_480,h_270,g_auto/q_auto/${asset.publicId}`}
+                                className="review-video-player"
+                                controls
+                                muted
+                                playsInline
+                              />
                             </div>
                           ) : (
                             <div className="review-before-after">

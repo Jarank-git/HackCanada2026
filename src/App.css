@@ -3683,9 +3683,30 @@ video.review-hero-img {
   display: block;
 }
 
-video.review-before-after-img {
-  object-fit: contain;
-  aspect-ratio: auto;
+/* ── Video preview (separate from image before/after) ── */
+.review-video-preview {
+  position: relative;
+  margin-bottom: 0.75rem;
+}
+
+.review-video-preview-label {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.35rem;
+  background: var(--color-teal);
+  color: #fff;
+}
+
+.review-video-player {
+  width: 100%;
+  max-height: 270px;
+  display: block;
+  border-radius: var(--radius-sm);
   background: #000;
 }
 
