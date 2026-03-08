@@ -185,7 +185,8 @@ export default function DownloadPage() {
             {PLATFORMS.map((p) => {
               const pc = platformCaptions[p.key];
               if (!pc) return null;
-              const fullText = pc.caption + (pc.hashtags.length > 0 ? '\n\n' + pc.hashtags.map((h) => `#${h}`).join(' ') : '');
+              const hashtagsStr = pc.hashtags.length > 0 ? pc.hashtags.map((h) => `#${h}`).join(' ') : '';
+              const fullText = pc.caption + (hashtagsStr ? '\n\n' + hashtagsStr : '');
               return (
                 <div key={p.key} className="platform-caption-card">
                   <div className="platform-caption-card-header">
@@ -203,14 +204,12 @@ export default function DownloadPage() {
                       Copy
                     </button>
                   </div>
-                  <p className="platform-caption-card-text">{pc.caption}</p>
-                  {pc.hashtags.length > 0 && (
-                    <div className="platform-caption-hashtags">
-                      {pc.hashtags.map((h) => (
-                        <span key={h} className="platform-caption-hashtag">#{h}</span>
-                      ))}
-                    </div>
-                  )}
+                  <div className="platform-caption-card-body">
+                    <p className="platform-caption-card-text">{pc.caption}</p>
+                    {hashtagsStr && (
+                      <p className="platform-caption-card-hashtags">{hashtagsStr}</p>
+                    )}
+                  </div>
                   <span className="platform-caption-card-count">{fullText.length} characters</span>
                 </div>
               );
