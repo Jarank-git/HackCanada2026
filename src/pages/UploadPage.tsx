@@ -363,6 +363,35 @@ export default function UploadPage() {
                   </div>
                   <div className="review-image-analysis-grid">
                     {assets.map((asset, idx) => {
+                      const isVid = asset.resourceType === 'video';
+                      const isHero = heroAsset?.publicId === asset.publicId;
+                      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dp498emx3';
+
+                      // Videos just get a preview player, no per-photo analysis
+                      if (isVid) {
+                        return (
+                          <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}`}>
+                            <div className="review-image-card-header">
+                              <div className="review-image-card-meta">
+                                <span className="review-image-card-label">
+                                  Video {idx + 1}
+                                  {isHero && <span className="review-image-card-hero-tag">Hero</span>}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="review-video-preview">
+                              <video
+                                src={`https://res.cloudinary.com/${cloudName}/video/upload/c_fill,w_480,h_270,g_auto/q_auto/${asset.publicId}`}
+                                className="review-video-player"
+                                controls
+                                muted
+                                playsInline
+                              />
+                            </div>
+                          </div>
+                        );
+                      }
+
                       const heuristicAnalysis = analyzeImage(asset, assets, heroAsset?.publicId ?? null);
                       const aiState = aiResults[asset.publicId];
                       const hasAI = !!aiState?.analysis;
@@ -370,7 +399,6 @@ export default function UploadPage() {
                       const aiError = aiState?.error ?? null;
                       const tier = getQualityTier(asset.qualityScore);
                       const pct = getQualityPercent(asset.qualityScore);
-                      const isHero = heroAsset?.publicId === asset.publicId;
 
                       // Use AI analysis when available, fall back to heuristic
                       const reasoning = hasAI ? aiState.analysis!.heroSuitability : heuristicAnalysis.heroReasoning;
@@ -378,17 +406,15 @@ export default function UploadPage() {
                       const note = hasAI ? aiState.analysis!.overallNote : heuristicAnalysis.overallNote;
                       const suggestions = hasAI ? aiState.analysis!.suggestedTransformations : [];
 
-                      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dp498emx3';
-                      const isVid = asset.resourceType === 'video';
-                      const beforeUrl = isVid ? '' : `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_center/f_auto,q_auto/${asset.publicId}`;
-                      const afterUrl = isVid ? '' : `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_auto/e_improve/f_auto,q_90/${asset.publicId}`;
+                      const beforeUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_center/f_auto,q_auto/${asset.publicId}`;
+                      const afterUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_auto/e_improve/f_auto,q_90/${asset.publicId}`;
 
                       return (
                         <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}${aiLoading ? ' review-image-card--loading' : ''}`}>
                           <div className="review-image-card-header">
                             <div className="review-image-card-meta">
                               <span className="review-image-card-label">
-                                {asset.resourceType === 'video' ? 'Video' : 'Photo'} {idx + 1}
+                                Photo {idx + 1}
                                 {isHero && <span className="review-image-card-hero-tag">Hero</span>}
                                 {hasAI && <span className="review-image-card-ai-tag">AI Analyzed</span>}
                               </span>
@@ -398,35 +424,22 @@ export default function UploadPage() {
                             </div>
                           </div>
 
-                          {isVid ? (
-                            <div className="review-video-preview">
-                              <span className="review-video-preview-label">Preview</span>
-                              <video
-                                src={`https://res.cloudinary.com/${cloudName}/video/upload/c_fill,w_480,h_270,g_auto/q_auto/${asset.publicId}`}
-                                className="review-video-player"
-                                controls
-                                muted
-                                playsInline
-                              />
+                          <div className="review-before-after">
+                            <div className="review-before-after-pane">
+                              <span className="review-before-after-label review-before-after-label--before">Before</span>
+                              <img src={beforeUrl} alt="Original" className="review-before-after-img" />
                             </div>
-                          ) : (
-                            <div className="review-before-after">
-                              <div className="review-before-after-pane">
-                                <span className="review-before-after-label review-before-after-label--before">Before</span>
-                                <img src={beforeUrl} alt="Original" className="review-before-after-img" />
-                              </div>
-                              <div className="review-before-after-arrow">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <line x1="5" y1="12" x2="19" y2="12" />
-                                  <polyline points="12 5 19 12 12 19" />
-                                </svg>
-                              </div>
-                              <div className="review-before-after-pane">
-                                <span className="review-before-after-label review-before-after-label--after">After</span>
-                                <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
-                              </div>
+                            <div className="review-before-after-arrow">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                              </svg>
                             </div>
-                          )}
+                            <div className="review-before-after-pane">
+                              <span className="review-before-after-label review-before-after-label--after">After</span>
+                              <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
+                            </div>
+                          </div>
 
                           {aiLoading ? (
                             <div className="review-image-card-shimmer">
