@@ -12,7 +12,7 @@ import { getQualityTier, getQualityPercent } from '../utils/qualityTier';
 import { analyzeImage } from '../utils/photoAnalysis';
 import { savePetCaption, savePetTemperament } from '../api/cloudinaryProxy';
 import { getPhotoTipsForImage, type PhotoTip } from '../api/gemini';
-import { assetHeroUrl, assetAnalysisUrl } from '../cloudinary/transformations';
+import { assetHeroUrl, assetAnalysisUrl, videoUrl } from '../cloudinary/transformations';
 import ErrorBanner from '../components/ui/ErrorBanner';
 import type { PetFormData, UploadedAsset } from '../types/pet';
 
@@ -223,11 +223,21 @@ export default function UploadPage() {
               <div className="review-preview">
                 {heroAsset && (
                   <div className="review-hero-wrap">
-                    <img
-                      src={assetHeroUrl(heroAsset.publicId, heroAsset.resourceType)}
-                      alt={formData.name}
-                      className="review-hero-img"
-                    />
+                    {heroAsset.resourceType === 'video' ? (
+                      <video
+                        src={videoUrl(heroAsset.publicId)}
+                        className="review-hero-img"
+                        controls
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={assetHeroUrl(heroAsset.publicId, heroAsset.resourceType)}
+                        alt={formData.name}
+                        className="review-hero-img"
+                      />
+                    )}
                     <span className="review-hero-badge">{heroAsset.resourceType === 'video' ? 'Hero Video' : 'Hero Photo'}</span>
                     {heroTier && (
                       <span className={`review-quality-badge review-quality-badge--${heroTier.cssClass}`}>
