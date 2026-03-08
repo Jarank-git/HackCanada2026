@@ -24,9 +24,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Pet not found' });
     }
 
-    // Delete all images
-    const publicIds = result.resources.map((r) => r.public_id);
-    await cloudinary.api.delete_resources(publicIds);
+    // Group resources by type (image vs video) since delete_resources
+    // defaults to resource_type='image' and won't delete videos otherwise
+    const imageIds: string[] = [];
+    const videoIds: string[] = [];
+    for (const r of result.resources) {
+      if (r.resource_type === 'video') {
+        videoIds.push(r.public_id);
+      } else {
+        imageIds.push(r.public_id);
+      }
+    }
+
+    if (imageIds.length > 0) {
+      await cloudinary.api.delete_resources(imageIds);
+    }
+    if (videoIds.length > 0) {
+      await cloudinary.api.delete_resources(videoIds, { resource_type: 'video' });
+    }
 
     // Try to remove the folder (will fail silently if not empty)
     try {
@@ -35,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Folder may not exist or may not be empty — safe to ignore
     }
 
-    res.json({ deleted: publicIds.length });
+    res.json({ deleted: imageIds.length + videoIds.length });
   } catch (err) {
     console.error('Failed to delete pet:', err);
     res.status(500).json({ error: 'Failed to delete pet campaign' });
