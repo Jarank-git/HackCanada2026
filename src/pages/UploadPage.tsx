@@ -333,7 +333,7 @@ export default function UploadPage() {
               </div>
 
               {/* Per-image analysis cards — images only, videos are excluded */}
-              {assets.filter((a) => a.resourceType !== 'video').length > 1 && (() => {
+              {assets.filter((a) => a.resourceType !== 'video').length >= 1 && (() => {
                 const imageAssets = assets.filter((a) => a.resourceType !== 'video');
                 const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dp498emx3';
                 return (
