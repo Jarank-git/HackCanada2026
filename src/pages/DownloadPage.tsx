@@ -218,6 +218,16 @@ export default function DownloadPage() {
         )}
       </div>
 
+      {/* Captions still loading notice */}
+      {captionsLoading && (
+        <div className="captions-generating-notice">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+          <span>Custom captions are being generated for each platform. Downloads will include them once ready.</span>
+        </div>
+      )}
+
       {/* Platform grid */}
       <h2 className="pet-section-title" style={{ marginTop: '2.5rem' }}>Platform Packs</h2>
       <div className="download-grid">
