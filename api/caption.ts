@@ -19,7 +19,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     res.json({ caption });
   } catch (err) {
-    console.error('Caption generation failed:', err);
-    res.status(500).json({ error: 'Failed to generate caption' });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Caption generation failed:', message);
+    res.status(500).json({ error: 'Failed to generate caption', detail: message });
   }
 }
