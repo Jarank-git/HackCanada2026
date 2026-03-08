@@ -1212,6 +1212,10 @@
   color: var(--color-navy);
 }
 
+.pet-info-value--good {
+  color: var(--color-teal);
+}
+
 .pet-details-section {
   margin-top: 1.5rem;
   padding-top: 1.5rem;

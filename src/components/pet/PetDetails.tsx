@@ -45,6 +45,24 @@ export default function PetDetails({ pet }: PetDetailsProps) {
         </div>
       </div>
 
+      {/* Medical info */}
+      {(pet.vaccination || pet.spayedNeutered) && (
+        <div className="pet-details-grid" style={{ marginTop: 0 }}>
+          {pet.vaccination && (
+            <div className="pet-info-item">
+              <span className="pet-info-label">Vaccination</span>
+              <span className={`pet-info-value ${pet.vaccination === 'Up to date' ? 'pet-info-value--good' : ''}`}>{pet.vaccination}</span>
+            </div>
+          )}
+          {pet.spayedNeutered && (
+            <div className="pet-info-item">
+              <span className="pet-info-label">{pet.sex === 'Female' ? 'Spayed' : pet.sex === 'Male' ? 'Neutered' : 'Spayed/Neutered'}</span>
+              <span className={`pet-info-value ${pet.spayedNeutered === 'Yes' ? 'pet-info-value--good' : ''}`}>{pet.spayedNeutered}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Temperament */}
       {pet.temperament.length > 0 && (
         <div className="pet-details-section">

@@ -65,6 +65,8 @@ export default function PetProfilePage() {
         age: pet.age,
         sex: pet.sex,
         temperament: pet.temperament,
+        vaccination: pet.vaccination,
+        spayedNeutered: pet.spayedNeutered,
         shelterName: pet.shelterName,
         shelterContact: pet.shelterContact,
         shelterLocation: pet.shelterLocation,
