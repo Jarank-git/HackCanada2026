@@ -150,11 +150,12 @@ export default function PetProfilePage() {
   }
 
   const heroPublicId = pet.publicIds[0] ?? '';
+  const heroResourceType = pet.resourceTypes?.[0] || 'image';
 
   return (
     <div className="page pet-profile-page">
       {/* Hero */}
-      {heroPublicId && <PetHero publicId={heroPublicId} petName={pet.name} />}
+      {heroPublicId && <PetHero publicId={heroPublicId} petName={pet.name} resourceType={heroResourceType} />}
 
       {/* Two-column layout */}
       <div className="pet-profile-layout">

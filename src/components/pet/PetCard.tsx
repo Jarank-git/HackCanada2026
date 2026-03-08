@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Pet } from '../../types/pet';
-import { heroUrl } from '../../cloudinary/transformations';
+import { assetHeroUrl } from '../../cloudinary/transformations';
 
 interface PetCardProps {
   pet: Pet;
@@ -8,8 +8,9 @@ interface PetCardProps {
 
 export default function PetCard({ pet }: PetCardProps) {
   const imagePublicId = pet.publicIds[0] ?? '';
+  const resourceType = pet.resourceTypes?.[0] || 'image';
   const imgSrc = imagePublicId
-    ? heroUrl(imagePublicId)
+    ? assetHeroUrl(imagePublicId, resourceType)
     : '';
 
   return (

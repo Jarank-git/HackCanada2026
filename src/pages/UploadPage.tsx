@@ -12,6 +12,7 @@ import { getQualityTier, getQualityPercent } from '../utils/qualityTier';
 import { analyzeImage } from '../utils/photoAnalysis';
 import { savePetCaption, savePetTemperament } from '../api/cloudinaryProxy';
 import { getPhotoTipsForImage, type PhotoTip } from '../api/gemini';
+import { assetHeroUrl, assetAnalysisUrl, videoUrl } from '../cloudinary/transformations';
 import ErrorBanner from '../components/ui/ErrorBanner';
 import type { PetFormData, UploadedAsset } from '../types/pet';
 
@@ -98,7 +99,10 @@ export default function UploadPage() {
         ? scored.reduce((sum, a) => sum + a.qualityScore!, 0) / scored.length
         : 0;
 
-      getPhotoTipsForImage(asset.secureUrl, formData, {
+      const tipUrl = asset.resourceType === 'video'
+        ? assetAnalysisUrl(asset.publicId, 'video', 600, 400)
+        : asset.secureUrl;
+      getPhotoTipsForImage(tipUrl, formData, {
         totalUploaded: updated.length,
         avgQuality,
       })
@@ -220,11 +224,11 @@ export default function UploadPage() {
                 {heroAsset && (
                   <div className="review-hero-wrap">
                     <img
-                      src={heroAsset.secureUrl}
+                      src={assetHeroUrl(heroAsset.publicId, heroAsset.resourceType)}
                       alt={formData.name}
                       className="review-hero-img"
                     />
-                    <span className="review-hero-badge">Hero Photo</span>
+                    <span className="review-hero-badge">{heroAsset.resourceType === 'video' ? 'Hero Video' : 'Hero Photo'}</span>
                     {heroTier && (
                       <span className={`review-quality-badge review-quality-badge--${heroTier.cssClass}`}>
                         {heroTier.label} Quality &middot; {heroPercent}%
@@ -263,7 +267,12 @@ export default function UploadPage() {
                       {formData.shelterName}
                     </p>
                   )}
-                  <p className="review-photo-count">{assets.length} photo{assets.length !== 1 ? 's' : ''} uploaded</p>
+                  <p className="review-photo-count">
+                    {assets.length} file{assets.length !== 1 ? 's' : ''} uploaded
+                    {assets.some((a) => a.resourceType === 'video') && (
+                      <> ({assets.filter((a) => a.resourceType === 'video').length} video{assets.filter((a) => a.resourceType === 'video').length !== 1 ? 's' : ''})</>
+                    )}
+                  </p>
 
                   {/* Quality summary bar chart */}
                   {assets.length > 0 && (
@@ -359,15 +368,18 @@ export default function UploadPage() {
                       const suggestions = hasAI ? aiState.analysis!.suggestedTransformations : [];
 
                       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dp498emx3';
-                      const beforeUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_center/f_auto,q_auto/${asset.publicId}`;
-                      const afterUrl = `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_240,h_180,g_auto/e_improve/f_auto,q_90/${asset.publicId}`;
+                      const isVid = asset.resourceType === 'video';
+                      const resPrefix = isVid ? 'video' : 'image';
+                      const fmtSuffix = isVid ? 'f_jpg' : 'f_auto';
+                      const beforeUrl = `https://res.cloudinary.com/${cloudName}/${resPrefix}/upload/c_fill,w_240,h_180,g_center/${fmtSuffix},q_auto/${asset.publicId}`;
+                      const afterUrl = `https://res.cloudinary.com/${cloudName}/${resPrefix}/upload/c_fill,w_240,h_180,g_auto/e_improve/${fmtSuffix},q_90/${asset.publicId}`;
 
                       return (
                         <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}${aiLoading ? ' review-image-card--loading' : ''}`}>
                           <div className="review-image-card-header">
                             <div className="review-image-card-meta">
                               <span className="review-image-card-label">
-                                Photo {idx + 1}
+                                {asset.resourceType === 'video' ? 'Video' : 'Photo'} {idx + 1}
                                 {isHero && <span className="review-image-card-hero-tag">Hero</span>}
                                 {hasAI && <span className="review-image-card-ai-tag">AI Analyzed</span>}
                               </span>
@@ -380,7 +392,11 @@ export default function UploadPage() {
                           <div className="review-before-after">
                             <div className="review-before-after-pane">
                               <span className="review-before-after-label review-before-after-label--before">Before</span>
-                              <img src={beforeUrl} alt="Original" className="review-before-after-img" />
+                              {isVid ? (
+                                <video src={videoUrl(asset.publicId)} className="review-before-after-img" controls muted />
+                              ) : (
+                                <img src={beforeUrl} alt="Original" className="review-before-after-img" />
+                              )}
                             </div>
                             <div className="review-before-after-arrow">
                               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -390,7 +406,11 @@ export default function UploadPage() {
                             </div>
                             <div className="review-before-after-pane">
                               <span className="review-before-after-label review-before-after-label--after">After</span>
-                              <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
+                              {isVid ? (
+                                <video src={videoUrl(asset.publicId)} className="review-before-after-img" controls muted />
+                              ) : (
+                                <img src={afterUrl} alt="Enhanced" className="review-before-after-img" />
+                              )}
                             </div>
                           </div>
 

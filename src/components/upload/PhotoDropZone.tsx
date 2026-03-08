@@ -4,6 +4,7 @@ import type { PhotoTip } from '../../api/gemini';
 import { UploadWidget, type CloudinaryUploadResult } from '../../cloudinary/UploadWidget';
 import { getQualityTier } from '../../utils/qualityTier';
 import { analyzeImage, getPhotoSuggestions } from '../../utils/photoAnalysis';
+import { assetThumbUrl } from '../../cloudinary/transformations';
 
 interface PhotoDropZoneProps {
   assets: UploadedAsset[];
@@ -56,7 +57,7 @@ export default function PhotoDropZone({
     <div className="photo-drop-zone">
       <div className="drop-zone-header">
         <span className="drop-zone-count">
-          {assets.length} / {maxPhotos} photos
+          {assets.length} / {maxPhotos} uploads
         </span>
       </div>
 
@@ -108,10 +109,17 @@ export default function PhotoDropZone({
                       </span>
                     )}
                     <img
-                      src={`https://res.cloudinary.com/dp498emx3/image/upload/c_fill,w_150,h_150,g_auto/f_auto,q_auto:good/${asset.publicId}`}
+                      src={assetThumbUrl(asset.publicId, asset.resourceType)}
                       alt=""
                       className="thumb-img"
                     />
+                    {asset.resourceType === 'video' && (
+                      <span className="thumb-video-badge" aria-label="Video">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                          <polygon points="5,3 19,12 5,21" />
+                        </svg>
+                      </span>
+                    )}
                     <span className={`thumb-quality-badge thumb-quality-badge--${tier.cssClass}`}>
                       {tier.label}
                     </span>

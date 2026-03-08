@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { analyzeImageForPet } from '../api/gemini';
+import { assetAnalysisUrl } from '../cloudinary/transformations';
 import type { PetFormData, UploadedAsset } from '../types/pet';
 import type { AIImageAnalysis } from '../utils/photoAnalysis';
 
@@ -32,6 +33,9 @@ export function useImageAnalysis(
     if (!asset) return;
 
     const idx = assets.indexOf(asset);
+    const analysisImageUrl = asset.resourceType === 'video'
+      ? assetAnalysisUrl(asset.publicId, 'video')
+      : asset.secureUrl;
 
     setResults((prev) => ({
       ...prev,
@@ -39,7 +43,7 @@ export function useImageAnalysis(
     }));
 
     try {
-      const analysis = await analyzeImageForPet(asset.secureUrl, petData, {
+      const analysis = await analyzeImageForPet(analysisImageUrl, petData, {
         isHero: publicId === heroPublicId,
         qualityScore: asset.qualityScore,
         totalImages: assets.length,
@@ -76,13 +80,16 @@ export function useImageAnalysis(
       const batch = toAnalyze.slice(i, i + CONCURRENCY);
       const promises = batch.map((asset) => {
         const idx = assets.indexOf(asset);
+        const batchAnalysisUrl = asset.resourceType === 'video'
+          ? assetAnalysisUrl(asset.publicId, 'video')
+          : asset.secureUrl;
 
         setResults((prev) => ({
           ...prev,
           [asset.publicId]: { loading: true, error: null, analysis: prev[asset.publicId]?.analysis ?? null },
         }));
 
-        return analyzeImageForPet(asset.secureUrl, petData, {
+        return analyzeImageForPet(batchAnalysisUrl, petData, {
           isHero: asset.publicId === heroPublicId,
           qualityScore: asset.qualityScore,
           totalImages: assets.length,

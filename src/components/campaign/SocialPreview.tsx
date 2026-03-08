@@ -1,7 +1,7 @@
 import type { Pet } from '../../types/pet';
 import type { PlatformKey } from '../../types/platform';
 import type { PlatformCaptions } from '../../api/gemini';
-import { platformUrl } from '../../cloudinary/transformations';
+import { assetPlatformUrl } from '../../cloudinary/transformations';
 
 interface SocialPreviewProps {
   pet: Pet;
@@ -264,7 +264,8 @@ function YouTubeFrame({ pet, imgSrc, caption }: {
 export default function SocialPreview({ pet, platform, platformCaptions }: SocialPreviewProps) {
   const publicId = pet.publicIds[0];
   if (!publicId) return null;
-  const imgSrc = platformUrl(publicId, platform);
+  const resourceType = pet.resourceTypes?.[0] || 'image';
+  const imgSrc = assetPlatformUrl(publicId, platform, resourceType);
   const caption = getCaption(platformCaptions, platform);
   const hashtags = getHashtags(platformCaptions, platform);
 

@@ -89,7 +89,10 @@ export async function analyzeImageWithGemini(
   context: ImageContext,
 ): Promise<ImageAnalysisResult> {
   // Fetch a resized version to reduce payload
-  const resizedUrl = imageUrl.replace('/upload/', '/upload/c_fill,w_800,h_600,q_auto/');
+  // For video URLs (/video/upload/), add f_jpg to extract a still frame
+  const isVideo = imageUrl.includes('/video/upload/');
+  const transforms = isVideo ? 'c_fill,w_800,h_600,f_jpg,q_auto' : 'c_fill,w_800,h_600,q_auto';
+  const resizedUrl = imageUrl.replace('/upload/', `/upload/${transforms}/`);
   const imageRes = await fetch(resizedUrl);
   if (!imageRes.ok) throw new Error(`Failed to fetch image: ${imageRes.status}`);
 
@@ -153,7 +156,9 @@ export async function generatePhotoTips(
   petInfo: { name: string; species: string; breed: string },
   context: { totalUploaded: number; avgQuality: number },
 ): Promise<PhotoTip[]> {
-  const resizedUrl = imageUrl.replace('/upload/', '/upload/c_fill,w_600,h_400,q_auto/');
+  const isVideoTips = imageUrl.includes('/video/upload/');
+  const tipsTransforms = isVideoTips ? 'c_fill,w_600,h_400,f_jpg,q_auto' : 'c_fill,w_600,h_400,q_auto';
+  const resizedUrl = imageUrl.replace('/upload/', `/upload/${tipsTransforms}/`);
   const imageRes = await fetch(resizedUrl);
   if (!imageRes.ok) throw new Error(`Failed to fetch image: ${imageRes.status}`);
 

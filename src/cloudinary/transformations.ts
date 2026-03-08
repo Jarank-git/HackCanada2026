@@ -75,6 +75,19 @@ export function platformUrl(publicId: string, platform: PlatformKey): string {
     .toURL();
 }
 
+/** Resource-type-aware platform URL (returns jpg still frame for videos) */
+export function assetPlatformUrl(publicId: string, platform: PlatformKey, resourceType: string): string {
+  if (resourceType === 'video') {
+    const { width, height } = PLATFORM_DIMENSIONS[platform];
+    return cld.video(publicId)
+      .resize(fill().width(width).height(height).gravity(autoGravity()))
+      .delivery(format(jpg()))
+      .delivery(quality(autoBest()))
+      .toURL();
+  }
+  return platformUrl(publicId, platform);
+}
+
 export function galleryUrl(publicId: string): string {
   return cld.image(publicId)
     .resize(fill().width(900).height(600).gravity(autoGravity()))
@@ -98,4 +111,42 @@ export function videoUrl(publicId: string): string {
   return cld.video(publicId)
     .delivery(quality(autoGood()))
     .toURL();
+}
+
+/** Resource-type-aware hero image (returns jpg still frame for videos) */
+export function assetHeroUrl(publicId: string, resourceType: string): string {
+  if (resourceType === 'video') {
+    return cld.video(publicId)
+      .resize(fill().width(1200).height(800).gravity(autoGravity()))
+      .delivery(format(jpg()))
+      .delivery(quality(autoBest()))
+      .toURL();
+  }
+  return heroUrl(publicId);
+}
+
+/** Resource-type-aware small thumbnail (150x150, returns jpg for videos) */
+export function assetThumbUrl(publicId: string, resourceType: string): string {
+  if (resourceType === 'video') {
+    return cld.video(publicId)
+      .resize(fill().width(150).height(150).gravity(autoGravity()))
+      .delivery(format(jpg()))
+      .delivery(quality(autoGood()))
+      .toURL();
+  }
+  const cloudName = cld.getConfig().cloud?.cloudName || 'dp498emx3';
+  return `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_150,h_150,g_auto/f_auto,q_auto:good/${publicId}`;
+}
+
+/** Resource-type-aware analysis URL for Gemini (returns jpg still for videos) */
+export function assetAnalysisUrl(publicId: string, resourceType: string, w = 800, h = 600): string {
+  if (resourceType === 'video') {
+    return cld.video(publicId)
+      .resize(fill().width(w).height(h).gravity(autoGravity()))
+      .delivery(format(jpg()))
+      .delivery(quality(autoGood()))
+      .toURL();
+  }
+  const cloudName = cld.getConfig().cloud?.cloudName || 'dp498emx3';
+  return `https://res.cloudinary.com/${cloudName}/image/upload/c_fill,w_${w},h_${h},q_auto/${publicId}`;
 }

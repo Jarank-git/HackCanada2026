@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { PlatformSpec } from '../../types/platform';
 import type { Pet } from '../../types/pet';
-import { platformUrl } from '../../cloudinary/transformations';
+import { assetPlatformUrl } from '../../cloudinary/transformations';
 
 const PLATFORM_COLORS: Record<string, string> = {
   instagram_feed: '#E4405F',
@@ -54,7 +54,8 @@ export default function PlatformPack({ pet, platform, onDownload, isGenerating }
   const accent = PLATFORM_COLORS[platform.key] || 'var(--color-navy)';
   const icon = PLATFORM_ICONS[platform.key];
   const previewPublicId = pet.publicIds[0];
-  const previewSrc = previewPublicId ? platformUrl(previewPublicId, platform.key) : '';
+  const previewResourceType = pet.resourceTypes?.[0] || 'image';
+  const previewSrc = previewPublicId ? assetPlatformUrl(previewPublicId, platform.key, previewResourceType) : '';
   const aspectRatio = `${platform.width} / ${platform.height}`;
 
   return (

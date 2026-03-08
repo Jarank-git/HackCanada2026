@@ -7,7 +7,7 @@ import type { Pet } from '../types/pet';
 import type { PlatformKey } from '../types/platform';
 import { PLATFORMS } from '../types/platform';
 import type { PlatformCaptions } from '../api/gemini';
-import { platformUrl } from '../cloudinary/transformations';
+import { assetPlatformUrl } from '../cloudinary/transformations';
 import { getFilenameForPlatform } from '../utils/platformSpecs';
 import { getProfileUrl } from '../utils/profileUrl';
 
@@ -57,8 +57,10 @@ function buildPlatformCaptionText(
 }
 
 /** Force jpg at max quality for consistent, high-fidelity downloads. */
-function downloadUrl(publicId: string, platform: PlatformKey): string {
-  const url = platformUrl(publicId, platform);
+function downloadUrl(publicId: string, platform: PlatformKey, resourceType = 'image'): string {
+  const url = assetPlatformUrl(publicId, platform, resourceType);
+  // For videos the format is already jpg; for images swap auto to jpg
+  if (resourceType === 'video') return url;
   return url.replace(/\/f_auto[^/]*/, '/f_jpg,q_95');
 }
 
@@ -136,12 +138,13 @@ export function useDownloadPack(pet: Pet | null, platformCaptions?: PlatformCapt
 
         for (let i = 0; i < pet.publicIds.length; i++) {
           try {
-            const url = downloadUrl(pet.publicIds[i], platform);
+            const rt = pet.resourceTypes?.[i] || 'image';
+            const url = downloadUrl(pet.publicIds[i], platform, rt);
             const blob = await fetchImageBlob(url);
             const filename = getFilenameForPlatform(pet.name, platform, i + 1);
             zip.file(filename, blob);
           } catch (err) {
-            console.error(`Skipped image ${i + 1}:`, err);
+            console.error(`Skipped asset ${i + 1}:`, err);
             skipped++;
           }
           setProgress(Math.round(((i + 1) / total) * 100));
@@ -203,12 +206,13 @@ export function useDownloadPack(pet: Pet | null, platformCaptions?: PlatformCapt
         const folder = zip.folder(platform.label)!;
         for (let i = 0; i < pet.publicIds.length; i++) {
           try {
-            const url = downloadUrl(pet.publicIds[i], platform.key);
+            const rt = pet.resourceTypes?.[i] || 'image';
+            const url = downloadUrl(pet.publicIds[i], platform.key, rt);
             const blob = await fetchImageBlob(url);
             const filename = getFilenameForPlatform(pet.name, platform.key, i + 1);
             folder.file(filename, blob);
           } catch (err) {
-            console.error(`Skipped ${platform.label} image ${i + 1}:`, err);
+            console.error(`Skipped ${platform.label} asset ${i + 1}:`, err);
             skipped++;
           }
           fetched++;
