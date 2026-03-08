@@ -372,7 +372,9 @@ export default function UploadPage() {
                       const resPrefix = isVid ? 'video' : 'image';
                       const fmtSuffix = isVid ? 'f_jpg' : 'f_auto';
                       const beforeUrl = `https://res.cloudinary.com/${cloudName}/${resPrefix}/upload/c_fill,w_240,h_180,g_center/${fmtSuffix},q_auto/${asset.publicId}`;
-                      const afterUrl = `https://res.cloudinary.com/${cloudName}/${resPrefix}/upload/c_fill,w_240,h_180,g_auto/e_improve/${fmtSuffix},q_90/${asset.publicId}`;
+                      // e_improve is image-only; for videos the enhancement is smart cropping (g_auto)
+                      const afterEnhance = isVid ? '' : 'e_improve/';
+                      const afterUrl = `https://res.cloudinary.com/${cloudName}/${resPrefix}/upload/c_fill,w_240,h_180,g_auto/${afterEnhance}${fmtSuffix},q_90/${asset.publicId}`;
 
                       return (
                         <div key={asset.publicId} className={`review-image-card${isHero ? ' review-image-card--hero' : ''}${aiLoading ? ' review-image-card--loading' : ''}`}>
