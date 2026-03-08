@@ -64,6 +64,8 @@ export default function PetGallery({ publicIds, resourceTypes = [] }: PetGallery
               src={videoUrl(publicIds[lightboxIdx])}
               controls
               autoPlay
+              muted
+              playsInline
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
