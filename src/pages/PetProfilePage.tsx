@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePet } from '../hooks/usePet';
 import { generateCaptionForPet } from '../api/gemini';
-import { savePetCaption } from '../api/cloudinaryProxy';
+import { savePetCaption, deletePet } from '../api/cloudinaryProxy';
 import PetHero from '../components/pet/PetHero';
 import PetGallery from '../components/pet/PetGallery';
 import PetDetails from '../components/pet/PetDetails';
@@ -24,12 +24,31 @@ const PAW_ICON = (
 
 export default function PetProfilePage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { pet, loading, error, isNotFound, refresh } = usePet(id);
 
   const [caption, setCaption] = useState<string | null>(null);
   const [captionLoading, setCaptionLoading] = useState(false);
   const [captionError, setCaptionError] = useState<string | null>(null);
   const autoGenerateAttempted = useRef(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    if (!pet) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deletePet(pet.id);
+      navigate('/gallery');
+    } catch (err) {
+      console.error('Delete failed:', err);
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete campaign');
+      setDeleting(false);
+    }
+  }
 
   const displayCaption = caption ?? pet?.caption ?? '';
 
@@ -235,8 +254,66 @@ export default function PetProfilePage() {
               </svg>
               Download Campaign Pack
             </Link>
+
+            <button
+              type="button"
+              className="btn btn-danger-outline"
+              style={{ width: '100%', marginTop: '0.75rem' }}
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+              </svg>
+              Delete Campaign
+            </button>
           </div>
         </aside>
+
+        {/* Delete confirmation modal */}
+        {showDeleteConfirm && (
+          <div className="modal-overlay" onClick={() => !deleting && setShowDeleteConfirm(false)}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <h3 className="modal-title">Delete Campaign</h3>
+              <p className="modal-text">
+                Are you sure you want to delete <strong>{pet.name}</strong>'s campaign? This will permanently remove all photos and data. This action cannot be undone.
+              </p>
+              {deleteError && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <ErrorBanner message={deleteError} />
+                </div>
+              )}
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <span className="upload-spinner">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="spin">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                      Deleting...
+                    </span>
+                  ) : 'Delete Forever'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

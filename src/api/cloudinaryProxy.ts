@@ -53,6 +53,16 @@ export async function savePetTemperament(petId: string, temperament: string[]): 
   if (!res.ok) throw new Error('Failed to save temperament');
 }
 
+export async function deletePet(petId: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/pets/${encodeURIComponent(petId)}/delete`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || 'Failed to delete campaign');
+  }
+}
+
 export async function savePetCaption(petId: string, caption: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/pets/${encodeURIComponent(petId)}/caption`, {
     method: 'POST',
