@@ -7,7 +7,7 @@ import type { Pet } from '../types/pet';
 import type { PlatformKey } from '../types/platform';
 import { PLATFORMS } from '../types/platform';
 import type { PlatformCaptions } from '../api/gemini';
-import { assetPlatformUrl } from '../cloudinary/transformations';
+import { assetPlatformUrl, videoPlatformUrl } from '../cloudinary/transformations';
 import { getFilenameForPlatform } from '../utils/platformSpecs';
 import { getProfileUrl } from '../utils/profileUrl';
 
@@ -56,11 +56,12 @@ function buildPlatformCaptionText(
   return lines.join('\n');
 }
 
-/** Force jpg at max quality for consistent, high-fidelity downloads. */
+/** Force jpg at max quality for images; keep actual video for video assets. */
 function downloadUrl(publicId: string, platform: PlatformKey, resourceType = 'image'): string {
+  if (resourceType === 'video') {
+    return videoPlatformUrl(publicId, platform);
+  }
   const url = assetPlatformUrl(publicId, platform, resourceType);
-  // For videos the format is already jpg; for images swap auto to jpg
-  if (resourceType === 'video') return url;
   return url.replace(/\/f_auto[^/]*/, '/f_jpg,q_95');
 }
 
@@ -141,7 +142,7 @@ export function useDownloadPack(pet: Pet | null, platformCaptions?: PlatformCapt
             const rt = pet.resourceTypes?.[i] || 'image';
             const url = downloadUrl(pet.publicIds[i], platform, rt);
             const blob = await fetchImageBlob(url);
-            const filename = getFilenameForPlatform(pet.name, platform, i + 1);
+            const filename = getFilenameForPlatform(pet.name, platform, i + 1, rt);
             zip.file(filename, blob);
           } catch (err) {
             console.error(`Skipped asset ${i + 1}:`, err);
@@ -209,7 +210,7 @@ export function useDownloadPack(pet: Pet | null, platformCaptions?: PlatformCapt
             const rt = pet.resourceTypes?.[i] || 'image';
             const url = downloadUrl(pet.publicIds[i], platform.key, rt);
             const blob = await fetchImageBlob(url);
-            const filename = getFilenameForPlatform(pet.name, platform.key, i + 1);
+            const filename = getFilenameForPlatform(pet.name, platform.key, i + 1, rt);
             folder.file(filename, blob);
           } catch (err) {
             console.error(`Skipped ${platform.label} asset ${i + 1}:`, err);

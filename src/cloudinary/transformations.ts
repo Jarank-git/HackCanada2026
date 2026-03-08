@@ -88,6 +88,15 @@ export function assetPlatformUrl(publicId: string, platform: PlatformKey, resour
   return platformUrl(publicId, platform);
 }
 
+/** Platform-sized video URL that keeps the video format (for downloads) */
+export function videoPlatformUrl(publicId: string, platform: PlatformKey): string {
+  const { width, height } = PLATFORM_DIMENSIONS[platform];
+  return cld.video(publicId)
+    .resize(fill().width(width).height(height).gravity(autoGravity()))
+    .delivery(quality(autoBest()))
+    .toURL();
+}
+
 export function galleryUrl(publicId: string): string {
   return cld.image(publicId)
     .resize(fill().width(900).height(600).gravity(autoGravity()))
