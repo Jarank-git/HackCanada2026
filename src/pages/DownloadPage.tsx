@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePet } from '../hooks/usePet';
 import { useDownloadPack } from '../hooks/useDownloadPack';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { PLATFORMS } from '../types/platform';
 import type { PlatformKey } from '../types/platform';
 import CaptionCard from '../components/campaign/CaptionCard';
@@ -9,12 +10,25 @@ import PlatformPack from '../components/campaign/PlatformPack';
 import SocialPreview from '../components/campaign/SocialPreview';
 import QRCodeCard from '../components/campaign/QRCodeCard';
 import KennelCard from '../components/campaign/KennelCard';
+import ErrorBanner from '../components/ui/ErrorBanner';
+import EmptyState from '../components/ui/EmptyState';
+
+const PAW_ICON = (
+  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }}>
+    <ellipse cx="6.5" cy="5" rx="2" ry="2.5" />
+    <ellipse cx="17.5" cy="5" rx="2" ry="2.5" />
+    <ellipse cx="3.5" cy="11" rx="1.8" ry="2.2" />
+    <ellipse cx="20.5" cy="11" rx="1.8" ry="2.2" />
+    <ellipse cx="12" cy="15.5" rx="4.5" ry="4" />
+  </svg>
+);
 
 export default function DownloadPage() {
   const { id } = useParams<{ id: string }>();
-  const { pet, loading, error } = usePet(id);
-  const { downloadPlatform, downloadAll, progress, isGenerating } = useDownloadPack(pet);
+  const { pet, loading, error, isNotFound, refresh } = usePet(id);
+  const { downloadPlatform, downloadAll, progress, isGenerating, error: downloadError, skippedCount } = useDownloadPack(pet);
   const [previewPlatform, setPreviewPlatform] = useState<PlatformKey | null>(null);
+  const online = useOnlineStatus();
 
   /* ── Loading skeleton ──────────────────────── */
   if (loading) {
@@ -37,24 +51,30 @@ export default function DownloadPage() {
     );
   }
 
-  /* ── Error / not found ─────────────────────── */
+  /* ── 404 not found ──────────────────────────── */
+  if (isNotFound) {
+    return (
+      <div className="page download-page">
+        <EmptyState
+          icon={PAW_ICON}
+          title="Pet not found"
+          description="This pet may have been removed or the link is incorrect."
+          action={{ label: 'Back to Gallery', to: '/gallery' }}
+        />
+      </div>
+    );
+  }
+
+  /* ── Network/other error ────────────────────── */
   if (error || !pet) {
     return (
       <div className="page download-page">
-        <div className="gallery-empty">
-          <div className="gallery-empty-icon">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }}>
-              <ellipse cx="6.5" cy="5" rx="2" ry="2.5" />
-              <ellipse cx="17.5" cy="5" rx="2" ry="2.5" />
-              <ellipse cx="3.5" cy="11" rx="1.8" ry="2.2" />
-              <ellipse cx="20.5" cy="11" rx="1.8" ry="2.2" />
-              <ellipse cx="12" cy="15.5" rx="4.5" ry="4" />
-            </svg>
-          </div>
-          <p>{error || 'Pet not found'}</p>
-          <Link to="/gallery" className="btn btn-primary" style={{ marginTop: '1.25rem' }}>
-            Back to Gallery
-          </Link>
+        <ErrorBanner
+          message={error || 'Something went wrong. Please try again.'}
+          onRetry={refresh}
+        />
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <Link to="/gallery" className="btn btn-outline">Back to Gallery</Link>
         </div>
       </div>
     );
@@ -67,6 +87,22 @@ export default function DownloadPage() {
         <h1>{pet.name} &mdash; Campaign Pack</h1>
         <p>Platform-optimized images and captions, ready to share.</p>
       </div>
+
+      {/* Download error */}
+      {downloadError && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <ErrorBanner message={downloadError} />
+        </div>
+      )}
+
+      {/* Skipped images warning */}
+      {skippedCount > 0 && !downloadError && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <ErrorBanner
+            message={`${skippedCount} image${skippedCount > 1 ? 's' : ''} couldn't be downloaded and ${skippedCount > 1 ? 'were' : 'was'} skipped.`}
+          />
+        </div>
+      )}
 
       {/* Progress bar */}
       {isGenerating && (
@@ -90,7 +126,7 @@ export default function DownloadPage() {
             pet={pet}
             platform={platform}
             onDownload={() => downloadPlatform(platform.key)}
-            isGenerating={isGenerating}
+            isGenerating={isGenerating || !online}
           />
         ))}
       </div>
@@ -131,7 +167,7 @@ export default function DownloadPage() {
           type="button"
           className="btn btn-primary btn-lg"
           onClick={downloadAll}
-          disabled={isGenerating}
+          disabled={isGenerating || !online}
         >
           {isGenerating ? (
             <span className="upload-spinner">

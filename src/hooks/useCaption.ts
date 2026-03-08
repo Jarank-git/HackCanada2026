@@ -22,7 +22,8 @@ export function useCaption(petData: PetFormData): UseCaptionResult {
       const result = await generateCaptionForPet(petData);
       setCaption(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate caption');
+      console.error('Caption generation failed:', err);
+      setError('Caption unavailable. Please try again.');
     } finally {
       setLoading(false);
     }

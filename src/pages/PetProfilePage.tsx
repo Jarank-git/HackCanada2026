@@ -9,10 +9,22 @@ import PetDetails from '../components/pet/PetDetails';
 import ShareButton from '../components/pet/ShareButton';
 import QRCodeCard from '../components/campaign/QRCodeCard';
 import KennelCard from '../components/campaign/KennelCard';
+import ErrorBanner from '../components/ui/ErrorBanner';
+import EmptyState from '../components/ui/EmptyState';
+
+const PAW_ICON = (
+  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }}>
+    <ellipse cx="6.5" cy="5" rx="2" ry="2.5" />
+    <ellipse cx="17.5" cy="5" rx="2" ry="2.5" />
+    <ellipse cx="3.5" cy="11" rx="1.8" ry="2.2" />
+    <ellipse cx="20.5" cy="11" rx="1.8" ry="2.2" />
+    <ellipse cx="12" cy="15.5" rx="4.5" ry="4" />
+  </svg>
+);
 
 export default function PetProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const { pet, loading, error } = usePet(id);
+  const { pet, loading, error, isNotFound, refresh } = usePet(id);
 
   const [caption, setCaption] = useState<string | null>(null);
   const [captionLoading, setCaptionLoading] = useState(false);
@@ -44,7 +56,8 @@ export default function PetProfilePage() {
         console.error('Failed to save caption:', err),
       );
     } catch (err) {
-      setCaptionError(err instanceof Error ? err.message : 'Failed to generate caption');
+      console.error('Caption generation failed:', err);
+      setCaptionError('Caption unavailable. Please try again.');
     } finally {
       setCaptionLoading(false);
     }
@@ -77,24 +90,30 @@ export default function PetProfilePage() {
     );
   }
 
-  /* ── Error / not found ─────────────────────── */
+  /* ── 404 not found ──────────────────────────── */
+  if (isNotFound) {
+    return (
+      <div className="page pet-profile-page">
+        <EmptyState
+          icon={PAW_ICON}
+          title="Pet not found"
+          description="This pet may have been removed or the link is incorrect."
+          action={{ label: 'Back to Gallery', to: '/gallery' }}
+        />
+      </div>
+    );
+  }
+
+  /* ── Network/other error ────────────────────── */
   if (error || !pet) {
     return (
       <div className="page pet-profile-page">
-        <div className="gallery-empty">
-          <div className="gallery-empty-icon">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }}>
-              <ellipse cx="6.5" cy="5" rx="2" ry="2.5" />
-              <ellipse cx="17.5" cy="5" rx="2" ry="2.5" />
-              <ellipse cx="3.5" cy="11" rx="1.8" ry="2.2" />
-              <ellipse cx="20.5" cy="11" rx="1.8" ry="2.2" />
-              <ellipse cx="12" cy="15.5" rx="4.5" ry="4" />
-            </svg>
-          </div>
-          <p>{error || 'Pet not found'}</p>
-          <Link to="/gallery" className="btn btn-primary" style={{ marginTop: '1.25rem' }}>
-            Back to Gallery
-          </Link>
+        <ErrorBanner
+          message={error || 'Something went wrong. Please try again.'}
+          onRetry={refresh}
+        />
+        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <Link to="/gallery" className="btn btn-outline">Back to Gallery</Link>
         </div>
       </div>
     );
@@ -146,7 +165,9 @@ export default function PetProfilePage() {
                 )}
               </button>
               {captionError && (
-                <p className="upload-error" style={{ marginTop: '0.5rem' }}>{captionError}</p>
+                <div style={{ marginTop: '0.75rem' }}>
+                  <ErrorBanner message={captionError} onRetry={handleGenerateCaption} />
+                </div>
               )}
             </div>
           )}

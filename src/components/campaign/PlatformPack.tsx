@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { PlatformSpec } from '../../types/platform';
 import type { Pet } from '../../types/pet';
 import { platformUrl } from '../../cloudinary/transformations';
@@ -10,7 +11,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   youtube_thumb: '#FF0000',
 };
 
-const PLATFORM_ICONS: Record<string, JSX.Element> = {
+const PLATFORM_ICONS: Record<string, ReactNode> = {
   instagram_feed: (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
@@ -80,6 +81,7 @@ export default function PlatformPack({ pet, platform, onDownload, isGenerating }
           className="btn btn-primary platform-card-btn"
           onClick={onDownload}
           disabled={isGenerating}
+          aria-label={`Download ${platform.label} ZIP`}
         >
           {isGenerating ? (
             <span className="upload-spinner">

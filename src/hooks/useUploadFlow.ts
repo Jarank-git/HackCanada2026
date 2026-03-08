@@ -37,7 +37,8 @@ export function useUploadFlow(
       // Return the pet ID so the page can navigate to /pet/:id
       return petId;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed';
+      console.error('Upload submission failed:', err);
+      const message = 'Something went wrong while creating your campaign. Please try again.';
       setError(message);
       throw err;
     } finally {

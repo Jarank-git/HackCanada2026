@@ -1,4 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import { QRCodeCanvas } from 'qrcode.react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import type { Pet } from '../types/pet';
@@ -6,6 +8,7 @@ import type { PlatformKey } from '../types/platform';
 import { PLATFORMS } from '../types/platform';
 import { platformUrl } from '../cloudinary/transformations';
 import { getFilenameForPlatform } from '../utils/platformSpecs';
+import { getProfileUrl } from '../utils/profileUrl';
 
 function buildCaptionText(pet: Pet): string {
   const lines: string[] = [];
@@ -32,40 +35,110 @@ async function fetchImageBlob(url: string): Promise<Blob> {
   return res.blob();
 }
 
+/** Render a QR code to an offscreen canvas and return as PNG blob. */
+function generateQrBlob(url: string): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    document.body.appendChild(container);
+
+    const root = createRoot(container);
+    root.render(
+      createElement(QRCodeCanvas, {
+        value: url,
+        size: 512,
+        fgColor: '#002b60',
+        bgColor: '#ffffff',
+        level: 'M',
+      }),
+    );
+
+    // Give React a tick to render
+    requestAnimationFrame(() => {
+      const canvas = container.querySelector('canvas');
+      if (!canvas) {
+        root.unmount();
+        document.body.removeChild(container);
+        reject(new Error('QR canvas not found'));
+        return;
+      }
+      canvas.toBlob((blob) => {
+        root.unmount();
+        document.body.removeChild(container);
+        if (blob) resolve(blob);
+        else reject(new Error('Failed to export QR canvas'));
+      }, 'image/png');
+    });
+  });
+}
+
 interface UseDownloadPackResult {
   downloadPlatform: (platform: PlatformKey) => Promise<void>;
   downloadAll: () => Promise<void>;
   progress: number;
   isGenerating: boolean;
+  error: string | null;
+  skippedCount: number;
 }
 
 export function useDownloadPack(pet: Pet | null): UseDownloadPackResult {
   const [progress, setProgress] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [skippedCount, setSkippedCount] = useState(0);
 
   const downloadPlatform = useCallback(
     async (platform: PlatformKey) => {
       if (!pet || pet.publicIds.length === 0) return;
       setIsGenerating(true);
       setProgress(0);
+      setError(null);
+      setSkippedCount(0);
 
       try {
         const zip = new JSZip();
         const total = pet.publicIds.length;
+        let skipped = 0;
 
         for (let i = 0; i < pet.publicIds.length; i++) {
-          const url = downloadUrl(pet.publicIds[i], platform);
-          const blob = await fetchImageBlob(url);
-          const filename = getFilenameForPlatform(pet.name, platform, i + 1);
-          zip.file(filename, blob);
+          try {
+            const url = downloadUrl(pet.publicIds[i], platform);
+            const blob = await fetchImageBlob(url);
+            const filename = getFilenameForPlatform(pet.name, platform, i + 1);
+            zip.file(filename, blob);
+          } catch (err) {
+            console.error(`Skipped image ${i + 1}:`, err);
+            skipped++;
+          }
           setProgress(Math.round(((i + 1) / total) * 100));
+        }
+
+        setSkippedCount(skipped);
+
+        if (skipped === total) {
+          setError('Failed to download images. Please check your connection and try again.');
+          return;
         }
 
         zip.file('caption.txt', buildCaptionText(pet));
 
+        // Add QR code and profile link
+        const profileUrl = getProfileUrl(pet.id);
+        zip.file('profile-link.txt', profileUrl);
+        try {
+          const qrBlob = await generateQrBlob(profileUrl);
+          zip.file('qr-code.png', qrBlob);
+        } catch (err) {
+          console.error('QR code generation skipped:', err);
+        }
+
         const content = await zip.generateAsync({ type: 'blob' });
         const safeName = pet.name.replace(/[^a-zA-Z0-9]+/g, '_').replace(/_+$/, '');
         saveAs(content, `${safeName}_${platform}.zip`);
+      } catch (err) {
+        console.error('ZIP generation failed:', err);
+        setError('Something went wrong generating the download. Please try again.');
       } finally {
         setIsGenerating(false);
         setProgress(0);
@@ -78,34 +151,62 @@ export function useDownloadPack(pet: Pet | null): UseDownloadPackResult {
     if (!pet || pet.publicIds.length === 0) return;
     setIsGenerating(true);
     setProgress(0);
+    setError(null);
+    setSkippedCount(0);
 
     try {
       const zip = new JSZip();
       const total = pet.publicIds.length * PLATFORMS.length;
       let fetched = 0;
+      let skipped = 0;
 
       for (const platform of PLATFORMS) {
         const folder = zip.folder(platform.label)!;
         for (let i = 0; i < pet.publicIds.length; i++) {
-          const url = downloadUrl(pet.publicIds[i], platform.key);
-          const blob = await fetchImageBlob(url);
-          const filename = getFilenameForPlatform(pet.name, platform.key, i + 1);
-          folder.file(filename, blob);
+          try {
+            const url = downloadUrl(pet.publicIds[i], platform.key);
+            const blob = await fetchImageBlob(url);
+            const filename = getFilenameForPlatform(pet.name, platform.key, i + 1);
+            folder.file(filename, blob);
+          } catch (err) {
+            console.error(`Skipped ${platform.label} image ${i + 1}:`, err);
+            skipped++;
+          }
           fetched++;
           setProgress(Math.round((fetched / total) * 100));
         }
       }
 
+      setSkippedCount(skipped);
+
+      if (skipped === total) {
+        setError('Failed to download images. Please check your connection and try again.');
+        return;
+      }
+
       zip.file('caption.txt', buildCaptionText(pet));
+
+      // Add QR code and profile link
+      const profileUrl = getProfileUrl(pet.id);
+      zip.file('profile-link.txt', profileUrl);
+      try {
+        const qrBlob = await generateQrBlob(profileUrl);
+        zip.file('qr-code.png', qrBlob);
+      } catch (err) {
+        console.error('QR code generation skipped:', err);
+      }
 
       const content = await zip.generateAsync({ type: 'blob' });
       const safeName = pet.name.replace(/[^a-zA-Z0-9]+/g, '_').replace(/_+$/, '');
       saveAs(content, `${safeName}_all_platforms.zip`);
+    } catch (err) {
+      console.error('ZIP generation failed:', err);
+      setError('Something went wrong generating the download. Please try again.');
     } finally {
       setIsGenerating(false);
       setProgress(0);
     }
   }, [pet]);
 
-  return { downloadPlatform, downloadAll, progress, isGenerating };
+  return { downloadPlatform, downloadAll, progress, isGenerating, error, skippedCount };
 }

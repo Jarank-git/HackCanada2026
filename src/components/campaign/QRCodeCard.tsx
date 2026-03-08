@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { getProfileUrl } from '../../utils/profileUrl';
 
 interface QRCodeCardProps {
   petId: string;
@@ -8,7 +9,7 @@ interface QRCodeCardProps {
 
 export default function QRCodeCard({ petId, petName }: QRCodeCardProps) {
   const svgWrapRef = useRef<HTMLDivElement>(null);
-  const profileUrl = `${window.location.origin}${window.location.pathname}#/pet/${petId}`;
+  const profileUrl = getProfileUrl(petId);
 
   const handleDownload = useCallback(() => {
     const svgEl = svgWrapRef.current?.querySelector('svg');
@@ -16,16 +17,16 @@ export default function QRCodeCard({ petId, petName }: QRCodeCardProps) {
 
     const svgData = new XMLSerializer().serializeToString(svgEl);
     const canvas = document.createElement('canvas');
-    canvas.width = 400;
-    canvas.height = 400;
+    canvas.width = 512;
+    canvas.height = 512;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const img = new Image();
     img.onload = () => {
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 400, 400);
-      ctx.drawImage(img, 0, 0, 400, 400);
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.drawImage(img, 0, 0, 512, 512);
       canvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
@@ -52,7 +53,7 @@ export default function QRCodeCard({ petId, petName }: QRCodeCardProps) {
         />
       </div>
       <span className="qr-card-url">{profileUrl}</span>
-      <button type="button" className="btn btn-outline btn-sm qr-card-btn" onClick={handleDownload}>
+      <button type="button" className="btn btn-outline btn-sm qr-card-btn" onClick={handleDownload} aria-label="Download QR code as PNG">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
           <polyline points="7 10 12 15 17 10" />

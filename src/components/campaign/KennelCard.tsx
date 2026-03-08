@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Pet } from '../../types/pet';
 import { heroUrl } from '../../cloudinary/transformations';
+import { getProfileUrl } from '../../utils/profileUrl';
 
 interface KennelCardProps {
   pet: Pet;
@@ -11,7 +12,7 @@ export default function KennelCard({ pet }: KennelCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const heroPublicId = pet.publicIds[0] ?? '';
   const imgSrc = heroPublicId ? heroUrl(heroPublicId) : '';
-  const profileUrl = `${window.location.origin}${window.location.pathname}#/pet/${pet.id}`;
+  const profileUrl = getProfileUrl(pet.id);
 
   function handlePrint() {
     window.print();
@@ -19,7 +20,7 @@ export default function KennelCard({ pet }: KennelCardProps) {
 
   return (
     <>
-      <button type="button" className="btn btn-outline kennel-card-print-btn" onClick={handlePrint}>
+      <button type="button" className="btn btn-outline kennel-card-print-btn" onClick={handlePrint} aria-label="Print kennel card">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 6 2 18 2 18 9" />
           <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
@@ -45,7 +46,7 @@ export default function KennelCard({ pet }: KennelCardProps) {
           {/* Photo */}
           {imgSrc && (
             <div className="kennel-card-photo">
-              <img src={imgSrc} alt={pet.name} />
+              <img src={imgSrc} alt={`${pet.name} photo`} />
             </div>
           )}
 

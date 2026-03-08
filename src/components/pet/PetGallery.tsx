@@ -30,8 +30,9 @@ export default function PetGallery({ publicIds }: PetGalleryProps) {
             className="pet-gallery-item"
             onClick={() => setLightboxId(pid)}
             type="button"
+            aria-label="View photo full size"
           >
-            <img src={galleryUrl(pid)} alt="" loading="lazy" />
+            <img src={galleryUrl(pid)} alt="Pet photo" loading="lazy" />
           </button>
         ))}
       </div>
@@ -46,7 +47,7 @@ export default function PetGallery({ publicIds }: PetGalleryProps) {
           <img
             className="lightbox-image"
             src={heroUrl(lightboxId)}
-            alt=""
+            alt="Pet photo enlarged"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

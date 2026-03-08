@@ -127,7 +127,7 @@ Build the upload page UI components. Create the following files and update Uploa
    - On submit: just console.log the data for now (we'll wire the real flow next)
    - Add the new layout CSS to App.css
 
-Follow the design system in CLAUDE.md: warm tones, navy headings, gold primary buttons, 8/12/20px border radii, Figtree font. Form inputs should have warm border (#e8dfd3), 8px border-radius, and focus state with gold outline.
+Follow the design system: warm tones, navy headings, gold primary buttons, 8/12/20px border radii, Figtree font. Form inputs should have warm border (#e8dfd3), 8px border-radius, and focus state with gold outline.
 ```
 
 ---

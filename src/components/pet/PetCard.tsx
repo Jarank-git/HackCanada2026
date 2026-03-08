@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Pet } from '../../types/pet';
-import { heroUrl, thumbnailUrl } from '../../cloudinary/transformations';
+import { heroUrl } from '../../cloudinary/transformations';
 
 interface PetCardProps {
   pet: Pet;
@@ -19,7 +19,7 @@ export default function PetCard({ pet }: PetCardProps) {
           <img
             className="pet-card-image"
             src={imgSrc}
-            alt={pet.name}
+            alt={`${pet.name} photo`}
             loading="lazy"
           />
         ) : (

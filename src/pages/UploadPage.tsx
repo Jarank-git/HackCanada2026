@@ -5,8 +5,10 @@ import PhotoDropZone from '../components/upload/PhotoDropZone';
 import StepIndicator from '../components/upload/StepIndicator';
 import { useUploadFlow } from '../hooks/useUploadFlow';
 import { useCaption } from '../hooks/useCaption';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { generatePetId } from '../utils/petId';
 import { savePetCaption } from '../api/cloudinaryProxy';
+import ErrorBanner from '../components/ui/ErrorBanner';
 import type { PetFormData, UploadedAsset } from '../types/pet';
 
 const INITIAL_FORM: PetFormData = {
@@ -25,6 +27,7 @@ const STEPS = ['Pet Details', 'Upload Photos', 'Review & Submit'];
 
 export default function UploadPage() {
   const navigate = useNavigate();
+  const online = useOnlineStatus();
 
   const petId = useMemo(() => generatePetId(), []);
 
@@ -141,6 +144,11 @@ export default function UploadPage() {
           {currentStep === 2 && (
             <>
               <h2 className="upload-section-title">Upload Photos</h2>
+              {!online && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <ErrorBanner message="You're offline. Photo uploads require an internet connection." />
+                </div>
+              )}
               <PhotoDropZone
                 assets={assets}
                 onUpload={handleAddAsset}
@@ -203,7 +211,7 @@ export default function UploadPage() {
                     type="button"
                     className="btn btn-secondary btn-sm"
                     onClick={handleGenerateCaption}
-                    disabled={captionLoading}
+                    disabled={captionLoading || !online}
                   >
                     {captionLoading ? (
                       <span className="upload-spinner">
@@ -217,7 +225,9 @@ export default function UploadPage() {
                 </div>
 
                 {captionError && (
-                  <div className="upload-error" style={{ marginBottom: '0.75rem' }}>{captionError}</div>
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <ErrorBanner message={captionError} onRetry={handleGenerateCaption} />
+                  </div>
                 )}
 
                 <textarea
@@ -233,7 +243,9 @@ export default function UploadPage() {
         </div>
 
         {error && (
-          <div className="upload-error">{error}</div>
+          <div style={{ marginTop: '1rem' }}>
+            <ErrorBanner message={error} onRetry={handleSubmit} />
+          </div>
         )}
 
         {/* Wizard navigation */}
@@ -265,7 +277,7 @@ export default function UploadPage() {
               type="button"
               className="btn btn-primary btn-lg"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !online}
             >
               {isSubmitting ? (
                 <span className="upload-spinner">

@@ -21,7 +21,8 @@ export function usePets(): UsePetsResult {
       const data = await fetchPets();
       setPets(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch pets');
+      console.error('Failed to fetch pets:', err);
+      setError('Something went wrong loading pets. Please try again.');
     } finally {
       setLoading(false);
     }

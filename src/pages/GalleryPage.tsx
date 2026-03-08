@@ -1,17 +1,39 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
 import { usePets } from '../hooks/usePets';
 import PetCard from '../components/pet/PetCard';
+import ErrorBanner from '../components/ui/ErrorBanner';
+import EmptyState from '../components/ui/EmptyState';
 
 const SPECIES_OPTIONS = ['All', 'Dog', 'Cat', 'Rabbit', 'Bird', 'Other'] as const;
+
+const PAW_ICON = (
+  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }}>
+    <ellipse cx="6.5" cy="5" rx="2" ry="2.5" />
+    <ellipse cx="17.5" cy="5" rx="2" ry="2.5" />
+    <ellipse cx="3.5" cy="11" rx="1.8" ry="2.2" />
+    <ellipse cx="20.5" cy="11" rx="1.8" ry="2.2" />
+    <ellipse cx="12" cy="15.5" rx="4.5" ry="4" />
+  </svg>
+);
 
 export default function GalleryPage() {
   const { pets, loading, error, refresh } = usePets();
   const [speciesFilter, setSpeciesFilter] = useState('All');
+  const [debouncedFilter, setDebouncedFilter] = useState('All');
+  const [errorDismissed, setErrorDismissed] = useState(false);
 
-  const filteredPets = speciesFilter === 'All'
-    ? pets
-    : pets.filter((p) => p.species.toLowerCase() === speciesFilter.toLowerCase());
+  // Debounce species filter by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedFilter(speciesFilter), 300);
+    return () => clearTimeout(timer);
+  }, [speciesFilter]);
+
+  const filteredPets = useMemo(
+    () => debouncedFilter === 'All'
+      ? pets
+      : pets.filter((p) => p.species.toLowerCase() === debouncedFilter.toLowerCase()),
+    [pets, debouncedFilter],
+  );
 
   return (
     <div className="page gallery-page">
@@ -23,7 +45,9 @@ export default function GalleryPage() {
       {/* Filters */}
       {!loading && pets.length > 0 && (
         <div className="gallery-filters">
+          <label htmlFor="species-filter" className="sr-only">Filter by species</label>
           <select
+            id="species-filter"
             className="form-input form-select gallery-filter-select"
             value={speciesFilter}
             onChange={(e) => setSpeciesFilter(e.target.value)}
@@ -32,19 +56,20 @@ export default function GalleryPage() {
               <option key={s} value={s}>{s === 'All' ? 'All Species' : s}</option>
             ))}
           </select>
-          <button className="btn btn-outline gallery-refresh-btn" onClick={refresh} type="button">
+          <button className="btn btn-outline gallery-refresh-btn" onClick={refresh} type="button" aria-label="Refresh pet list">
             Refresh
           </button>
         </div>
       )}
 
       {/* Error state */}
-      {error && (
-        <div className="upload-error" style={{ marginBottom: '1.5rem' }}>
-          {error}
-          <button className="btn btn-outline" onClick={refresh} style={{ marginLeft: '1rem' }} type="button">
-            Retry
-          </button>
+      {error && !errorDismissed && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <ErrorBanner
+            message={error}
+            onRetry={() => { setErrorDismissed(false); refresh(); }}
+            onDismiss={() => setErrorDismissed(true)}
+          />
         </div>
       )}
 
@@ -69,36 +94,21 @@ export default function GalleryPage() {
 
       {/* Empty state */}
       {!loading && !error && pets.length === 0 && (
-        <div className="gallery-empty">
-          <div className="gallery-empty-icon">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.25 }}>
-              <ellipse cx="6.5" cy="5" rx="2" ry="2.5" />
-              <ellipse cx="17.5" cy="5" rx="2" ry="2.5" />
-              <ellipse cx="3.5" cy="11" rx="1.8" ry="2.2" />
-              <ellipse cx="20.5" cy="11" rx="1.8" ry="2.2" />
-              <ellipse cx="12" cy="15.5" rx="4.5" ry="4" />
-            </svg>
-          </div>
-          <p>No campaigns yet. Be the first!</p>
-          <Link to="/upload" className="btn btn-primary" style={{ marginTop: '1.25rem' }}>
-            Create a Campaign
-          </Link>
-        </div>
+        <EmptyState
+          icon={PAW_ICON}
+          title="No campaigns yet"
+          description="Be the first to create an adoption campaign for a pet in need."
+          action={{ label: 'Create a Campaign', to: '/upload' }}
+        />
       )}
 
       {/* No results for filter */}
       {!loading && !error && pets.length > 0 && filteredPets.length === 0 && (
-        <div className="gallery-empty">
-          <p>No {speciesFilter.toLowerCase()} pets found.</p>
-          <button
-            className="btn btn-outline"
-            onClick={() => setSpeciesFilter('All')}
-            style={{ marginTop: '1rem' }}
-            type="button"
-          >
-            Show All Pets
-          </button>
-        </div>
+        <EmptyState
+          icon={PAW_ICON}
+          title={`No ${debouncedFilter.toLowerCase()} pets found`}
+          description="Try selecting a different species filter."
+        />
       )}
 
       {/* Pet cards grid */}
