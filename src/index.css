@@ -36,7 +36,10 @@
   --shadow-lg: 0 8px 30px rgba(26,35,50,0.1);
   --max-width: 1140px;
 
-  font-family: 'Laid Back', 'Figtree', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Laid Back', 'Quicksand', system-ui, sans-serif;
+  --font-body: 'Quicksand', 'Figtree', system-ui, -apple-system, sans-serif;
+
+  font-family: var(--font-body);
   line-height: 1.6;
   font-weight: 400;
   color: var(--color-text);
@@ -45,6 +48,10 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
 }
 
 *, *::before, *::after {
