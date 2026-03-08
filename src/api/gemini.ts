@@ -1,7 +1,7 @@
 import type { PetFormData } from '../types/pet';
 import type { AIImageAnalysis } from '../utils/photoAnalysis';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : '/api');
 
 export async function generateCaptionForPet(petData: PetFormData): Promise<string> {
   const res = await fetch(`${BASE_URL}/caption`, {
