@@ -222,7 +222,7 @@ export default function UploadPage() {
             <>
               <div className="review-preview">
                 {heroAsset && (
-                  <div className="review-hero-wrap">
+                  <div className={`review-hero-wrap${heroAsset.resourceType === 'video' ? ' review-hero-wrap--video' : ''}`}>
                     {heroAsset.resourceType === 'video' ? (
                       <video
                         src={videoUrl(heroAsset.publicId)}
@@ -230,6 +230,7 @@ export default function UploadPage() {
                         controls
                         muted
                         playsInline
+                        style={{ objectFit: 'contain', height: 'auto', maxHeight: 400, background: '#000', borderRadius: '0.5rem' }}
                       />
                     ) : (
                       <img
@@ -411,6 +412,7 @@ export default function UploadPage() {
                                   controls
                                   muted
                                   playsInline
+                                  style={{ objectFit: 'contain', aspectRatio: 'auto', background: '#000' }}
                                 />
                               </div>
                             </div>

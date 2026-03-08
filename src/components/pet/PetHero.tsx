@@ -21,9 +21,9 @@ export default function PetHero({ publicId, petName, resourceType = 'image' }: P
       .toURL();
 
     return (
-      <div className="pet-hero-container">
-        <video src={videoSrc} width={1200} height={800} controls muted playsInline />
-        <div className="pet-hero-overlay pet-hero-overlay--video">
+      <div className="pet-hero-container pet-hero-container--video">
+        <video src={videoSrc} controls muted playsInline style={{ width: '100%', maxHeight: 500, borderRadius: 'var(--radius-lg)' }} />
+        <div className="pet-hero-overlay" style={{ pointerEvents: 'none', bottom: '3rem' }}>
           <h1 className="pet-hero-name">{petName}</h1>
         </div>
       </div>
